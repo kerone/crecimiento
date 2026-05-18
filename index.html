@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crece · Seguimiento de crecimiento</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+html,body{margin:0;padding:0;width:100%;min-height:100vh;font-family:'DM Sans',sans-serif;background:#f4f1ec;color:#1c1814;-webkit-font-smoothing:antialiased}
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#f4f1ec;--surface:#fff;--surface2:#faf8f4;--border:#e4dfd6;
+  --text:#1c1814;--text2:#6b625a;--text3:#a09890;
+  --red:#b91c1c;--redl:#fef2f2;--redb:#fecaca;
+  --ora:#c2410c;--oral:#fff7ed;--orab:#fed7aa;
+  --grn:#166534;--grnl:#f0fdf4;--grnb:#bbf7d0;
+  --blu:#1d4ed8;--blul:#eff6ff;--blub:#bfdbfe;
+  --yel:#854d0e;--yell:#fefce8;--yelb:#fef08a;
+  --acc:#c4845a;
+  --serif:'Fraunces',Georgia,serif;--mono:'DM Mono',monospace;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 14px rgba(0,0,0,.05);
+}
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;z-index:999}
+.spinner{width:32px;height:32px;border-radius:50%;border:3px solid var(--border);border-top-color:#1e4d35;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ltxt{font-size:.85rem;color:var(--text3)}
+/* ONBOARDING */
+#onboarding{display:none;min-height:100vh;align-items:center;justify-content:center;padding:2rem;flex-direction:column}
+.ob-card{background:var(--surface);border-radius:20px;padding:2.5rem;max-width:560px;width:100%;box-shadow:var(--shadow)}
+.ob-logo{font-family:var(--serif);font-size:2rem;font-weight:300;text-align:center;margin-bottom:.25rem}
+.ob-logo em{font-style:italic;color:var(--acc)}
+.ob-sub{font-size:.875rem;color:var(--text2);text-align:center;margin-bottom:2rem;line-height:1.5}
+.ob-step{display:none}.ob-step.active{display:block}
+.step-dots{display:flex;gap:.5rem;justify-content:center;margin-bottom:1.75rem}
+.sdot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .2s}
+.sdot.on{background:#1e4d35}
+.ob-stitle{font-family:var(--serif);font-size:1.05rem;font-weight:600;margin-bottom:1.1rem}
+.child-block{background:var(--surface2);border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:.85rem;border:1.5px solid var(--border)}
+.child-block-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:.85rem}
+.ob-actions{display:flex;gap:.75rem;margin-top:1.5rem}
+.ob-sec{flex:1;padding:.75rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;cursor:pointer;color:var(--text2)}
+.ob-pri{flex:2;padding:.75rem;background:#1e4d35;color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer}
+.ob-pri:hover{opacity:.88}.ob-sec:hover{background:var(--border)}
+.ob-note{font-size:.73rem;color:var(--text3);margin-top:.85rem;line-height:1.5;text-align:center}
+/* FORM */
+.fg{margin-bottom:.9rem}
+.fg label{display:block;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);margin-bottom:.35rem}
+.fg input,.fg select,.fg textarea{width:100%;padding:.68rem .9rem;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--text);background:var(--bg);outline:none;transition:border-color .2s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#1e4d35}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+@media(max-width:500px){.frow{grid-template-columns:1fr}}
+/* APP */
+#app{display:none;flex-direction:column;min-height:100vh}
+#hdr{background:var(--surface);border-bottom:1px solid var(--border);height:56px;display:flex!important;flex-direction:row!important;align-items:center;justify-content:space-between;padding:0 1.5rem;position:sticky;top:0;z-index:50}
+.logo{font-family:var(--serif);font-size:1.15rem;font-weight:600;white-space:nowrap}
+.logo em{font-style:italic;color:var(--acc)}
+.hbtns{display:flex!important;flex-direction:row!important;gap:.5rem;align-items:center}
+.ibtn{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.95rem;color:var(--text2);transition:all .15s;flex-shrink:0}
+.ibtn:hover{border-color:var(--text);color:var(--text);background:var(--surface2)}
+#tabs{background:var(--surface);border-bottom:1px solid var(--border);display:flex!important;flex-direction:row!important;padding:0 1.5rem;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{padding:.75rem 1.4rem;font-size:.875rem;font-weight:500;color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0;border:none;border-bottom:2.5px solid transparent;background:none;font-family:'DM Sans',sans-serif;transition:all .15s;line-height:1}
+.tab:hover{color:var(--text)}.tab.active{color:var(--text);border-bottom-color:var(--text)}
+#main{max-width:1080px;width:100%;margin:0 auto;padding:1.75rem 1.5rem}
+.section{display:none}.section.active{display:block}
+/* CARDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+@media(max-width:640px){.g2{grid-template-columns:1fr}}
+.card{background:var(--surface);border-radius:14px;border:1.5px solid var(--border);padding:1.25rem 1.5rem;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.cname{font-family:var(--serif);font-size:1.35rem;font-weight:700;margin-bottom:.15rem}
+.cmeta{font-size:.75rem;color:var(--text3);font-family:var(--mono);margin-bottom:1rem}
+.mets{display:flex;gap:.65rem;flex-wrap:wrap;margin-bottom:.85rem}
+.met{flex:1;min-width:64px;background:var(--surface2);border-radius:10px;padding:.6rem .7rem;text-align:center}
+.mv{font-family:var(--mono);font-size:1.25rem;font-weight:500;line-height:1;margin-bottom:.2rem}
+.ml{font-size:.63rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.sp{background:var(--surface2);border-radius:10px;padding:.8rem 1rem;margin-top:.5rem;border:1.5px solid var(--border)}
+.sr{display:flex;gap:.55rem;margin-bottom:.4rem;align-items:flex-start}
+.sr:last-child{margin-bottom:0}
+.si{font-size:.9rem;flex-shrink:0;margin-top:.05rem}
+.st{font-size:.8rem;line-height:1.4}
+.stitle{font-family:var(--serif);font-size:1rem;font-weight:400;color:var(--text2);margin-bottom:.75rem}
+/* ALERTS */
+.alert{display:flex;gap:.85rem;padding:.9rem 1.1rem;border-radius:12px;margin-bottom:.5rem;border:1.5px solid transparent}
+.ar{background:var(--redl);border-color:var(--redb)}.ao{background:var(--oral);border-color:var(--orab)}
+.ag{background:var(--grnl);border-color:var(--grnb)}.ab{background:var(--blul);border-color:var(--blub)}
+.ay{background:var(--yell);border-color:var(--yelb)}
+.aico{font-size:1.1rem;flex-shrink:0;margin-top:.1rem}
+.abody h4{font-size:.875rem;font-weight:600;margin-bottom:.15rem}
+.ar h4{color:var(--red)}.ao h4{color:var(--ora)}.ag h4{color:var(--grn)}.ab h4{color:var(--blu)}.ay h4{color:var(--yel)}
+.abody p{font-size:.8rem;color:var(--text2);line-height:1.45}
+.wtd{margin-top:.5rem;padding:.45rem .7rem;background:rgba(0,0,0,.05);border-radius:8px;font-size:.77rem;color:var(--text2);line-height:1.4}
+/* UPCOMING */
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem}
+@media(max-width:640px){.rg{grid-template-columns:1fr}}
+.ri{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:.9rem 1.1rem;display:flex;gap:.75rem;box-shadow:var(--shadow)}
+.rdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:.35rem}
+.rbody h4{font-size:.85rem;font-weight:600;margin-bottom:.2rem}
+.rbody p{font-size:.77rem;color:var(--text2);line-height:1.4}
+.rdate{font-family:var(--mono);font-size:.7rem;color:var(--text3);margin-top:.3rem}
+/* DETAIL */
+.dh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem}
+.dtitle{font-family:var(--serif);font-size:1.8rem;font-weight:300}
+.dtitle strong{font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.1rem;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;color:white;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.cc{background:var(--surface);border-radius:14px;border:1.5px solid var(--border);padding:1.25rem 1.5rem;margin-bottom:1.25rem;box-shadow:var(--shadow)}
+.clbl{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:.85rem}
+.oleg{display:flex;flex-wrap:wrap;gap:.5rem .85rem;margin-top:.6rem}
+.oleg span{font-size:.72rem;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:.3rem}
+.oleg i{display:inline-block;width:18px;height:2px;border-radius:1px}
+.tc{background:var(--surface);border-radius:14px;border:1.5px solid var(--border);overflow:hidden;margin-bottom:1.25rem;box-shadow:var(--shadow)}
+.th{padding:.85rem 1.25rem;border-bottom:1px solid var(--border)}.th h3{font-size:.875rem;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{padding:.6rem 1rem;text-align:left;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);background:var(--surface2);border-bottom:1px solid var(--border)}
+td{padding:.7rem 1rem;font-size:.84rem;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.tm{font-family:var(--mono)}
+.pb{display:inline-block;padding:.15rem .55rem;border-radius:100px;font-size:.72rem;font-weight:600;font-family:var(--mono)}
+.dbtn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:.9rem;padding:.2rem;transition:color .15s}
+.dbtn:hover{color:var(--red)}
+.ebtn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:.9rem;padding:.2rem;transition:color .15s}
+.ebtn:hover{color:#1d4ed8}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--text3);font-size:.875rem}
+/* CALENDAR */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+@media(max-width:640px){.cg{grid-template-columns:1fr}}
+.ci{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:1rem 1.1rem;box-shadow:var(--shadow)}
+.ci.done{opacity:.5;background:var(--surface2)}
+.ci.overdue{border-color:var(--redb);background:var(--redl)}
+.ci.soon{border-color:var(--orab);background:var(--oral)}
+.ctop{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:.5rem}
+.ctag{display:inline-block;padding:.12rem .55rem;border-radius:100px;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.tro{background:#e6f0ea;color:#1e4d35}.tpv{background:var(--blul);color:var(--blu)}.tcl{background:var(--redl);color:var(--red)}.tpr{background:var(--oral);color:var(--ora)}
+.cchk{width:30px;height:30px;border-radius:50%;border:2px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;transition:all .2s;color:var(--text3)}
+.cchk:hover{border-color:var(--grn);color:var(--grn);background:var(--grnl)}
+.ci.done .cchk{background:var(--grn);border-color:var(--grn);color:white}
+.ci h4{font-size:.85rem;font-weight:600;margin-bottom:.3rem}
+.ci p{font-size:.77rem;color:var(--text2);line-height:1.4}
+.cdate{font-family:var(--mono);font-size:.7rem;color:var(--text3);margin-top:.4rem}
+.cact{margin-top:.6rem;padding:.5rem .7rem;background:rgba(0,0,0,.04);border-radius:8px;font-size:.75rem;color:var(--text2);line-height:1.4}
+.cstat{margin-top:.45rem;padding:.3rem .65rem;border-radius:8px;font-size:.75rem;font-weight:500}
+/* MODALS */
+.overlay{position:fixed;inset:0;background:rgba(28,24,20,.55);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:20px;padding:2rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:up .22s ease}
+.modal-lg{max-width:540px}
+@keyframes up{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.mt{font-family:var(--serif);font-size:1.35rem;font-weight:700;margin-bottom:.2rem}
+.ms{font-size:.8rem;color:var(--text3);margin-bottom:1.4rem}
+.macts{display:flex;gap:.75rem;margin-top:1.4rem}
+.bcncl{flex:1;padding:.72rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:500;cursor:pointer;color:var(--text2)}
+.bcncl:hover{background:var(--border)}
+.bsub{flex:2;padding:.72rem;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:700;cursor:pointer;color:white}
+.bsub:hover{opacity:.85}
+.section-sep{border:none;border-top:1px solid var(--border);margin:1.1rem 0}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:white;padding:.7rem 1.1rem;border-radius:10px;font-size:.85rem;z-index:300;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+.toast.on{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<div id="loader"><div class="spinner"></div><p class="ltxt">Cargando...</p></div>
+
+<!-- ONBOARDING -->
+<div id="onboarding" style="display:none">
+  <div class="ob-card">
+    <div class="ob-logo">Crece · <em>seguimiento</em></div>
+    <p class="ob-sub">Configura los datos de tu familia para empezar. Solo se hace una vez.</p>
+    <div class="step-dots" id="sdots"></div>
+    <div class="ob-step active" id="ob1">
+      <div class="ob-stitle">Datos de los padres</div>
+      <div class="frow">
+        <div class="fg"><label>Talla madre (cm)</label><input type="number" id="ob-madre" placeholder="159" min="140" max="200" step="0.5"></div>
+        <div class="fg"><label>Talla padre (cm)</label><input type="number" id="ob-padre" placeholder="188" min="150" max="220" step="0.5"></div>
+      </div>
+      <div class="ob-stitle" style="margin-top:1rem">¿Cuántos hijos vais a seguir?</div>
+      <div class="fg">
+        <select id="ob-nkids" onchange="updateKidForms()">
+          <option value="1">1 hijo</option>
+          <option value="2" selected>2 hijos</option>
+          <option value="3">3 hijos</option>
+          <option value="4">4 hijos</option>
+        </select>
+      </div>
+      <div class="ob-actions">
+        <button class="ob-pri" onclick="obNext()">Siguiente →</button>
+      </div>
+    </div>
+    <div class="ob-step" id="ob2">
+      <div class="ob-stitle">Datos de los hijos</div>
+      <div id="kid-forms"></div>
+      <div class="ob-actions">
+        <button class="ob-sec" onclick="obPrev()">← Atrás</button>
+        <button class="ob-pri" onclick="obFinish()">Empezar →</button>
+      </div>
+      <p class="ob-note">Puedes editar todo esto después desde ⚙ Configuración.</p>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;flex-direction:column">
+  <div id="hdr">
+    <div class="logo" id="app-logo">Crece</div>
+    <div class="hbtns">
+      <button class="ibtn" onclick="loadData()" title="Sincronizar">↻</button>
+      <button class="ibtn" onclick="openSettings()" title="Configuración">⚙</button>
+    </div>
+  </div>
+  <div id="tabs"></div>
+  <div id="main"></div>
+</div>
+
+<!-- MEASURE MODAL -->
+<div class="overlay" id="ov-measure">
+  <div class="modal">
+    <div class="mt" id="m-title">Añadir medida</div>
+    <div class="ms" id="m-sub"></div>
+    <div class="frow">
+      <div class="fg"><label>Fecha (dd-mm-aaaa)</label><input type="text" id="f-fecha" placeholder="18-05-2026" maxlength="10"></div>
+      <div class="fg"><label>Edad (años)</label><input type="number" id="f-edad" step="0.1" min="0" max="20"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Talla (cm)</label><input type="number" id="f-talla" step="0.1" min="40" max="220"></div>
+      <div class="fg"><label>Peso (kg)</label><input type="number" id="f-peso" step="0.1" min="5" max="150"></div>
+    </div>
+    <div class="fg"><label>Observaciones</label><textarea id="f-obs" rows="2" placeholder="Revisión rutinaria, resultado análisis..."></textarea></div>
+    <div class="macts">
+      <button class="bcncl" onclick="closeModal('ov-measure')">Cancelar</button>
+      <button class="bsub" id="btn-sub" onclick="saveMeasure()" style="background:#1e4d35">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="ov-settings">
+  <div class="modal modal-lg">
+    <div class="mt">Configuración familiar</div>
+    <div class="ms">Editar datos de la familia</div>
+    <div class="frow">
+      <div class="fg"><label>Talla madre (cm)</label><input type="number" id="s-madre" step="0.5"></div>
+      <div class="fg"><label>Talla padre (cm)</label><input type="number" id="s-padre" step="0.5"></div>
+    </div>
+    <hr class="section-sep">
+    <div id="s-kids"></div>
+    <div class="macts">
+      <button class="bcncl" onclick="closeModal('ov-settings')">Cancelar</button>
+      <button class="bsub" onclick="saveSettings()" style="background:#1e4d35">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// JSONBIN
+// ══════════════════════════════════════════
+const BIN_ID  = '6a0b0fc36610dd3ae864bb0a';
+const API_KEY = '$2a$10$byEkgCiPtr6uA9j.sw5Uiuld00jGPRMT1Rn9TlhHYbPe3CFfaEu6G';
+const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let D = null;   // { config:{madre,padre,kids:[{name,dob,sex}]}, measures:{}, done:{} }
+let ACT_KID = 0;
+let ACT_EDIT = -1;   // -1 = new measure, >=0 = editing row index
+let CHARTS = {};
+let OB_STEP = 1;
+
+const COLORS  = ['#1e4d35','#6b2d5e','#1d4ed8','#c2410c'];
+const COLORS_L = ['#e6f0ea','#f3e8f1','#eff6ff','#fff7ed'];
+const COLORS_M = ['#3a7d56','#a855a0','#3b82f6','#f97316'];
+
+// ══════════════════════════════════════════
+// OMS TABLES
+// ══════════════════════════════════════════
+const OMS = {
+  M:{3:{p3:88,p10:91,p25:94,p50:96,p75:99,p90:102,p97:104},4:{p3:94,p10:97,p25:100,p50:103,p75:106,p90:109,p97:112},5:{p3:100,p10:103,p25:107,p50:110,p75:113,p90:116,p97:119},6:{p3:106,p10:109,p25:113,p50:116,p75:120,p90:123,p97:126},7:{p3:111,p10:115,p25:118,p50:122,p75:126,p90:129,p97:132},8:{p3:116,p10:120,p25:124,p50:128,p75:132,p90:135,p97:138},9:{p3:121,p10:125,p25:129,p50:133,p75:137,p90:141,p97:144},10:{p3:126,p10:130,p25:134,p50:138,p75:143,p90:147,p97:150},11:{p3:131,p10:135,p25:139,p50:143,p75:148,p90:152,p97:156},12:{p3:136,p10:140,p25:145,p50:149,p75:154,p90:159,p97:163},13:{p3:143,p10:147,p25:152,p50:156,p75:161,p90:166,p97:170},14:{p3:151,p10:155,p25:159,p50:163,p75:168,p90:172,p97:176},15:{p3:155,p10:159,p25:163,p50:167,p75:171,p90:175,p97:179},16:{p3:158,p10:162,p25:165,p50:169,p75:173,p90:177,p97:181},17:{p3:159,p10:163,p25:166,p50:170,p75:174,p90:178,p97:182}},
+  F:{3:{p3:87,p10:90,p25:93,p50:95,p75:98,p90:101,p97:103},4:{p3:93,p10:96,p25:99,p50:102,p75:105,p90:108,p97:111},5:{p3:99,p10:102,p25:106,p50:109,p75:112,p90:115,p97:118},6:{p3:104,p10:108,p25:112,p50:115,p75:119,p90:122,p97:125},7:{p3:110,p10:114,p25:117,p50:121,p75:125,p90:128,p97:131},8:{p3:115,p10:119,p25:123,p50:127,p75:131,p90:134,p97:138},9:{p3:120,p10:125,p25:129,p50:133,p75:137,p90:141,p97:144},10:{p3:126,p10:130,p25:134,p50:138,p75:143,p90:147,p97:151},11:{p3:132,p10:136,p25:140,p50:144,p75:149,p90:153,p97:157},12:{p3:138,p10:142,p25:146,p50:151,p75:156,p90:160,p97:163},13:{p3:143,p10:147,p25:152,p50:156,p75:161,p90:165,p97:168},14:{p3:147,p10:151,p25:155,p50:159,p75:164,p90:168,p97:171},15:{p3:148,p10:152,p25:155,p50:160,p75:164,p90:168,p97:172},16:{p3:149,p10:152,p25:156,p50:160,p75:164,p90:168,p97:172}}
+};
+
+// ══════════════════════════════════════════
+// DATE HELPERS
+// ══════════════════════════════════════════
+function parseDate(s) {
+  if (!s) return null;
+  s = String(s).trim();
+  // dd-mm-yyyy
+  if (/^\d{2}-\d{2}-\d{4}$/.test(s)) {
+    const [d,m,y] = s.split('-');
+    const dt = new Date(+y, +m-1, +d);
+    return isNaN(dt) ? null : dt;
+  }
+  // yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [y,m,d] = s.split('-');
+    const dt = new Date(+y, +m-1, +d);
+    return isNaN(dt) ? null : dt;
+  }
+  return null;
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  s = String(s).trim();
+  if (/^\d{2}-\d{2}-\d{4}$/.test(s)) return s;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [y,m,d] = s.split('-');
+    return `${d}-${m}-${y}`;
+  }
+  return s;
+}
+
+function todayStr() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+}
+
+function isValidDate(s) {
+  if (!/^\d{2}-\d{2}-\d{4}$/.test(s)) return false;
+  const [d,m,y] = s.split('-').map(Number);
+  if (m<1||m>12||d<1||d>31) return false;
+  const dt = new Date(y, m-1, d);
+  return dt.getFullYear()===y && dt.getMonth()===m-1 && dt.getDate()===d;
+}
+
+function formatDateInput(e) {
+  let v = e.target.value.replace(/[^0-9]/g,'');
+  if (v.length > 2) v = v.slice(0,2)+'-'+v.slice(2);
+  if (v.length > 5) v = v.slice(0,5)+'-'+v.slice(5);
+  if (v.length > 10) v = v.slice(0,10);
+  e.target.value = v;
+}
+
+// Add N years to a dd-mm-yyyy date, return dd-mm-yyyy
+function addYears(dob, years) {
+  const d = parseDate(dob);
+  if (!d) return '';
+  const result = new Date(d.getFullYear() + years, d.getMonth(), d.getDate());
+  return `${String(result.getDate()).padStart(2,'0')}-${String(result.getMonth()+1).padStart(2,'0')}-${result.getFullYear()}`;
+}
+
+// Add N months to a dd-mm-yyyy date
+function addMonths(dob, months) {
+  const d = parseDate(dob);
+  if (!d) return '';
+  const result = new Date(d.getFullYear(), d.getMonth() + months, d.getDate());
+  return `${String(result.getDate()).padStart(2,'0')}-${String(result.getMonth()+1).padStart(2,'0')}-${result.getFullYear()}`;
+}
+
+function calcAge(dob) {
+  const d = parseDate(dob);
+  if (!d) return 0;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return Math.max(0, age);
+}
+
+function calcAgeDecimal(dob) {
+  const d = parseDate(dob);
+  if (!d) return 0;
+  return Math.max(0, (new Date() - d) / (365.25 * 86400000));
+}
+
+function calcDiana(sex, madre, padre) {
+  const m = parseFloat(madre)||0, p = parseFloat(padre)||0;
+  if (!m || !p) return null;
+  return sex === 'M' ? (p + m + 13) / 2 : (p + m - 13) / 2;
+}
+
+// ══════════════════════════════════════════
+// CALENDAR GENERATOR
+// Uses addYears/addMonths from real DOB → correct dates
+// ══════════════════════════════════════════
+function genCalendar(kid, diana) {
+  const dob = kid.dob;
+  const d = parseDate(dob);
+  if (!d) return [];
+  const sex = kid.sex;
+  const name = kid.name;
+  const ageNow = calcAgeDecimal(dob);
+  const today = new Date();
+  const cal = [];
+
+  const pubertyAnalytic = sex === 'M' ? 10 : 8;
+  const pubertyStart    = sex === 'M' ? 11 : 9;
+  const pubertyPeak     = sex === 'M' ? 13 : 11;
+  const minVel          = sex === 'M' ? 7 : 6;
+
+  // ── Routine check-ups every 6 months ──────────
+  // Start from birth year + ceil(age to next 0.5)
+  // Go up to puberty start age
+  const startAge = Math.ceil(ageNow * 2) / 2;  // next half-year
+  for (let a = startAge; a <= pubertyStart + 0.5; a += 0.5) {
+    const ageRounded = Math.round(a * 10) / 10;
+    const wholeYears = Math.floor(ageRounded);
+    const halfYear   = (ageRounded % 1) >= 0.4;  // .5 half
+    const dateStr = halfYear
+      ? addMonths(dob, Math.round(ageRounded * 12))
+      : addYears(dob, wholeYears);
+    const label = Number.isInteger(ageRounded)
+      ? `Revisión ${ageRounded} años`
+      : `Revisión ${ageRounded} años`;
+    cal.push({
+      id: `r-${name}-${ageRounded}`,
+      label,
+      date: dateStr,
+      type: 'routine',
+      who: 'Pediatra',
+      desc: `Talla y peso. Calcular velocidad de crecimiento. Percentil para ${name}.`,
+      action: `Medir talla y peso en la misma báscula/tallímetro. Calcular diferencia con medida anterior. Si velocidad < 4 cm/6 meses o cae de percentil → comentar al pediatra y solicitar derivación a endocrinología.`
+    });
+  }
+
+  // ── Preventive analytics ───────────────────────
+  if (ageNow < pubertyAnalytic) {
+    cal.push({
+      id: `prev-${name}-analytics`,
+      label: `Analítica preventiva (${pubertyAnalytic} años)`,
+      date: addYears(dob, pubertyAnalytic),
+      type: 'preventiva',
+      who: 'Endocrinología',
+      desc: `IGF-1, IGFBP-3, TSH, T4L, hemograma, anticuerpos celiaquía. Rx edad ósea mano izquierda.`,
+      action: `Solicitar derivación a endocrinología pediátrica. Pruebas: IGF-1, IGFBP-3, TSH, T4L, hemograma completo, tTG-IgA (celiaquía), Rx edad ósea mano izquierda. Llevar historial completo de medidas.`
+    });
+  }
+
+  // ── Puberty onset ─────────────────────────────
+  if (ageNow < pubertyStart) {
+    cal.push({
+      id: `pub-${name}-onset`,
+      label: `Revisión puberal (${pubertyStart} años)`,
+      date: addYears(dob, pubertyStart),
+      type: 'routine',
+      who: 'Pediatra/Endoc.',
+      desc: sex === 'M'
+        ? 'Estadio Tanner. Signos puberales: cambio de voz, vello, testículos.'
+        : 'Estadio Tanner. Botón mamario antes de 8 años = pubertad precoz → derivar urgente.',
+      action: sex === 'M'
+        ? 'Valorar estadio Tanner. Si pubertad avanzada → Rx edad ósea para calcular potencial restante.'
+        : 'Vigilar inicio puberal. Botón mamario < 8 años → derivar urgente a endocrinología.'
+    });
+  }
+
+  // ── Growth peak (CLAVE) ───────────────────────
+  if (ageNow < pubertyPeak) {
+    cal.push({
+      id: `peak-${name}`,
+      label: `Pico de estirón (${pubertyPeak} años)`,
+      date: addYears(dob, pubertyPeak),
+      type: 'clave',
+      who: 'Endocrinología',
+      desc: `Confirmar velocidad ≥ ${minVel} cm/año. Si no → pruebas estimulación GH urgente.`,
+      action: `CRÍTICO: si velocidad < ${minVel} cm/año → pruebas de estimulación de GH en hospital de día. Es la última ventana terapéutica para actuar sobre la talla.`
+    });
+  }
+
+  // ── Diana comparison ──────────────────────────
+  if (diana && ageNow < pubertyPeak + 2) {
+    cal.push({
+      id: `diana-${name}`,
+      label: `Revisión talla proyectada vs diana`,
+      date: addYears(dob, pubertyPeak + 1),
+      type: 'preventiva',
+      who: 'Endocrinología',
+      desc: `Comparar talla proyectada con diana familiar (${diana.toFixed(1)} cm ±8.5). Rx edad ósea.`,
+      action: `Rx edad ósea para calcular talla adulta proyectada. Comparar con diana. Si diferencia > 8 cm → valorar tratamiento. Llevar historial completo.`
+    });
+  }
+
+  // Sort by date
+  cal.sort((a, b) => parseDate(a.date) - parseDate(b.date));
+
+  // Add index for display
+  return cal;
+}
+
+// ══════════════════════════════════════════
+// JSONBIN API
+// ══════════════════════════════════════════
+async function binGet() {
+  const r = await fetch(BIN_URL+'/latest', { headers: { 'X-Master-Key': API_KEY } });
+  if (!r.ok) throw new Error('HTTP '+r.status);
+  const j = await r.json();
+  return j.record;
+}
+async function binPut(data) {
+  const r = await fetch(BIN_URL, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.onload = () => loadData();
+
+async function loadData() {
+  show('loader');
+  try {
+    const rec = await binGet();
+    if (!rec || !rec.config || !rec.config.kids || !rec.config.kids.length) {
+      D = { config: { madre: '', padre: '', kids: [] }, measures: {}, done: {} };
+      hide('loader'); initOnboarding();
+    } else {
+      D = rec;
+      D.measures = D.measures || {};
+      D.done = D.done || {};
+      hide('loader'); initApp();
+    }
+  } catch(e) {
+    D = { config: { madre: '', padre: '', kids: [] }, measures: {}, done: {} };
+    hide('loader'); initOnboarding();
+  }
+}
+
+// ══════════════════════════════════════════
+// ONBOARDING
+// ══════════════════════════════════════════
+function initOnboarding() {
+  OB_STEP = 1;
+  updateKidForms();
+  renderDots();
+  showObStep(1);
+  show('onboarding');
+}
+function renderDots() {
+  el('sdots').innerHTML = [1,2].map(i =>
+    `<div class="sdot${i===OB_STEP?' on':''}" id="dot-${i}"></div>`).join('');
+}
+function showObStep(n) {
+  OB_STEP = n;
+  document.querySelectorAll('.ob-step').forEach(s => s.classList.remove('active'));
+  el('ob'+n).classList.add('active');
+  [1,2].forEach(i => el('dot-'+i)?.classList.toggle('on', i===n));
+}
+function updateKidForms() {
+  const n = parseInt(el('ob-nkids').value) || 2;
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    html += `<div class="child-block">
+      <div class="child-block-title">Hijo ${i+1}</div>
+      <div class="frow">
+        <div class="fg"><label>Nombre</label><input type="text" id="ob-name-${i}" placeholder="Nombre"></div>
+        <div class="fg"><label>Sexo</label>
+          <select id="ob-sex-${i}"><option value="M">Niño</option><option value="F">Niña</option></select>
+        </div>
+      </div>
+      <div class="fg"><label>Fecha de nacimiento (dd-mm-aaaa)</label>
+        <input type="text" id="ob-dob-${i}" placeholder="15-03-2018" maxlength="10">
+      </div>
+    </div>`;
+  }
+  el('kid-forms').innerHTML = html;
+  for (let i = 0; i < n; i++) el('ob-dob-'+i).addEventListener('input', formatDateInput);
+}
+function obNext() {
+  const madre = parseFloat(el('ob-madre').value);
+  const padre = parseFloat(el('ob-padre').value);
+  if (!madre || !padre || madre < 140 || padre < 150) { toast('Introduce tallas válidas de los padres'); return; }
+  showObStep(2);
+}
+function obPrev() { showObStep(1); }
+async function obFinish() {
+  const n = parseInt(el('ob-nkids').value) || 2;
+  const kids = [];
+  for (let i = 0; i < n; i++) {
+    const name = (el('ob-name-'+i).value || '').trim();
+    const dob  = (el('ob-dob-'+i).value || '').trim();
+    const sex  = el('ob-sex-'+i).value;
+    if (!name) { toast(`Introduce el nombre del hijo ${i+1}`); return; }
+    if (!isValidDate(dob)) { toast(`Fecha inválida para ${name}. Usa dd-mm-aaaa`); return; }
+    kids.push({ name, dob, sex });
+  }
+  D.config = { madre: parseFloat(el('ob-madre').value), padre: parseFloat(el('ob-padre').value), kids };
+  D.measures = {}; D.done = {};
+  show('loader');
+  try {
+    await binPut(D);
+    hide('loader'); hide('onboarding'); initApp();
+  } catch(e) { hide('loader'); toast('Error: '+e.message); }
+}
+
+// ══════════════════════════════════════════
+// APP
+// ══════════════════════════════════════════
+function initApp() {
+  const kids = D.config.kids;
+  el('app-logo').innerHTML = `Crece · <em>${kids.map(k=>k.name).join(' &amp; ')}</em>`;
+
+  // Tabs
+  el('tabs').innerHTML = `<button class="tab active" onclick="showTab('dash',this)">Panel</button>` +
+    kids.map((k,i) => `<button class="tab" style="--c:${COLORS[i]}" onclick="showTab('k${i}',this)" id="tab-k${i}">${k.name}</button>`).join('');
+
+  // CSS for active tab colors
+  const style = document.createElement('style');
+  kids.forEach((k,i) => {
+    style.textContent += `#tab-k${i}.active{color:${COLORS[i]};border-bottom-color:${COLORS[i]}}`;
+  });
+  document.head.appendChild(style);
+
+  // Main HTML
+  let html = `<div id="s-dash" class="section active">
+    <div class="g2" id="dash-cards"></div>
+    <p class="stitle">Alertas y recomendaciones</p>
+    <div id="alerts-box" style="margin-bottom:1.5rem"></div>
+    <p class="stitle">Revisiones — pendientes y próximas</p>
+    <div class="rg" id="rev-box"></div>
+  </div>`;
+
+  kids.forEach((k,i) => {
+    html += `<div id="s-k${i}" class="section">
+      <div class="dh">
+        <div class="dtitle">${k.name} · <strong style="color:${COLORS[i]}" id="age-k${i}">${calcAge(k.dob)} años</strong></div>
+        <button class="btn" style="background:${COLORS[i]}" onclick="openModal(${i})">+ Añadir medida</button>
+      </div>
+      <div class="cc"><p class="clbl">Talla (cm) vs. curvas OMS ${k.sex==='M'?'niño':'niña'}</p>
+        <canvas id="chart-${i}" height="200"></canvas><div class="oleg" id="leg-${i}"></div></div>
+      <div class="tc"><div class="th"><h3>Registro de medidas</h3></div><div id="tbl-${i}"></div></div>
+      <p class="stitle" style="margin-top:1.25rem">Calendario de revisiones</p>
+      <div class="cg" id="cal-${i}"></div>
+    </div>`;
+  });
+
+  el('main').innerHTML = html;
+  document.getElementById('app').style.display = 'flex';
+  renderAll();
+}
+
+// ══════════════════════════════════════════
+// MEASURES
+// ══════════════════════════════════════════
+async function saveMeasure() {
+  const fecha = el('f-fecha').value.trim();
+  const talla = el('f-talla').value;
+  if (!fecha || !isValidDate(fecha)) { toast('Fecha inválida. Usa dd-mm-aaaa'); return; }
+  if (!talla) { toast('La talla es obligatoria'); return; }
+  const key = String(ACT_KID);
+  if (!D.measures[key]) D.measures[key] = [];
+  const row = {
+    fecha, talla: parseFloat(talla),
+    edad: parseFloat(el('f-edad').value) || parseFloat(calcAgeDecimal(D.config.kids[ACT_KID].dob).toFixed(1)),
+    peso: parseFloat(el('f-peso').value) || 0,
+    obs: el('f-obs').value.trim()
+  };
+  el('btn-sub').textContent = 'Guardando...';
+  try {
+    if (ACT_EDIT >= 0) {
+      // Replace existing row
+      const old = D.measures[key][ACT_EDIT];
+      D.measures[key][ACT_EDIT] = row;
+      D.measures[key].sort((a,b) => parseDate(a.fecha) - parseDate(b.fecha));
+      try {
+        await binPut(D);
+        closeModal('ov-measure'); toast('✓ Medida actualizada'); renderAll();
+      } catch(e) {
+        D.measures[key][ACT_EDIT] = old; toast('Error: '+e.message);
+      }
+    } else {
+      // New row
+      D.measures[key].push(row);
+      D.measures[key].sort((a,b) => parseDate(a.fecha) - parseDate(b.fecha));
+      try {
+        await binPut(D);
+        closeModal('ov-measure'); toast('✓ Guardado'); renderAll();
+      } catch(e) {
+        D.measures[key].pop(); toast('Error: '+e.message);
+      }
+    }
+  } catch(e) { toast('Error: '+e.message); }
+  el('btn-sub').textContent = ACT_EDIT >= 0 ? 'Guardar cambios' : 'Guardar';
+}
+
+async function deleteRow(kidIdx, rowIdx) {
+  if (!confirm('¿Eliminar esta medida?')) return;
+  const key = String(kidIdx);
+  const removed = D.measures[key].splice(rowIdx, 1);
+  try {
+    await binPut(D); toast('Eliminada'); renderAll();
+  } catch(e) {
+    D.measures[key].splice(rowIdx, 0, ...removed); toast('Error: '+e.message);
+  }
+}
+
+async function toggleDone(id) {
+  D.done[id] = !D.done[id];
+  try { await binPut(D); renderAll(); }
+  catch(e) { D.done[id] = !D.done[id]; toast('Error: '+e.message); }
+}
+
+// ══════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════
+function openSettings() {
+  el('s-madre').value = D.config.madre || '';
+  el('s-padre').value = D.config.padre || '';
+  let html = '';
+  D.config.kids.forEach((k,i) => {
+    html += `<div class="child-block" style="margin-bottom:.75rem">
+      <div class="child-block-title">${k.name}</div>
+      <div class="frow">
+        <div class="fg"><label>Nombre</label><input type="text" id="s-name-${i}" value="${k.name}"></div>
+        <div class="fg"><label>Sexo</label>
+          <select id="s-sex-${i}">
+            <option value="M"${k.sex==='M'?' selected':''}>Niño</option>
+            <option value="F"${k.sex==='F'?' selected':''}>Niña</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>Fecha nacimiento (dd-mm-aaaa)</label>
+        <input type="text" id="s-dob-${i}" value="${k.dob}" maxlength="10">
+      </div>
+    </div>`;
+  });
+  el('s-kids').innerHTML = html;
+  D.config.kids.forEach((_,i) => el('s-dob-'+i).addEventListener('input', formatDateInput));
+  el('ov-settings').classList.add('open');
+}
+
+async function saveSettings() {
+  const madre = parseFloat(el('s-madre').value);
+  const padre = parseFloat(el('s-padre').value);
+  if (!madre || !padre) { toast('Tallas de padres inválidas'); return; }
+  const kids = D.config.kids.map((_,i) => ({
+    name: (el('s-name-'+i).value||'').trim() || D.config.kids[i].name,
+    sex:  el('s-sex-'+i).value,
+    dob:  (el('s-dob-'+i).value||'').trim()
+  }));
+  D.config = { madre, padre, kids };
+  try {
+    await binPut(D);
+    closeModal('ov-settings'); toast('✓ Guardado');
+    el('main').innerHTML = ''; el('tabs').innerHTML = '';
+    initApp();
+  } catch(e) { toast('Error: '+e.message); }
+}
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function renderAll() {
+  const kids = D.config.kids;
+  let cardsHtml = '';
+  kids.forEach((_,i) => cardsHtml += kidCardHtml(i));
+  el('dash-cards').innerHTML = cardsHtml;
+  renderAlerts();
+  renderUpcoming();
+  kids.forEach((_,i) => renderDetail(i));
+}
+
+function pct(t, edad, sex) {
+  const oms = OMS[sex] || OMS.M;
+  const a = Math.min(17, Math.max(3, Math.round(edad)));
+  const r = oms[a];
+  if (!r) return { lbl:'—', n:50 };
+  if (t < r.p3)  return { lbl:'<P3', n:1 };
+  if (t < r.p10) return { lbl:'P3–P10', n:6 };
+  if (t < r.p25) return { lbl:'P10–P25', n:17 };
+  if (t < r.p50) return { lbl:'P25–P50', n:37 };
+  if (t < r.p75) return { lbl:'P50–P75', n:62 };
+  if (t < r.p90) return { lbl:'P75–P90', n:82 };
+  if (t < r.p97) return { lbl:'P90–P97', n:93 };
+  return { lbl:'>P97', n:99 };
+}
+
+function kidCardHtml(i) {
+  const kid = D.config.kids[i];
+  const rows = D.measures[String(i)] || [];
+  const diana = calcDiana(kid.sex, D.config.madre, D.config.padre);
+  const ageNow = calcAgeDecimal(kid.dob);
+  const col = COLORS[i];
+
+  if (!rows.length) {
+    return `<div class="card" style="border-top:3px solid ${col}">
+      <div class="cname" style="color:${col}">${kid.name}</div>
+      <div class="cmeta">${calcAge(kid.dob)} años · Sin datos</div>
+      <span style="font-size:.8rem;color:var(--text3)">Ve a la pestaña de ${kid.name} y añade la primera medida.</span>
+    </div>`;
+  }
+
+  const last = rows[rows.length-1];
+  const prev = rows.length > 1 ? rows[rows.length-2] : null;
+  const vel  = prev ? +(last.talla - prev.talla).toFixed(1) : null;
+  const p    = pct(last.talla, last.edad || ageNow, kid.sex);
+  const diff = diana ? (diana - last.talla).toFixed(0) : null;
+
+  const rs = [];
+  if (p.n < 3)       rs.push({i:'🚨', t:'<strong>Bajo P3.</strong> Consultar endocrinología urgente.'});
+  else if (p.n < 10) rs.push({i:'⚠️', t:'<strong>P3–P10.</strong> Percentil bajo. Comentar con pediatra.'});
+  else if (p.n > 90) rs.push({i:'⬆️', t:'<strong>Por encima de P90.</strong> Sin acción necesaria.'});
+  else               rs.push({i:'✅', t:`<strong>Rango normal</strong> (${p.lbl}) según tablas OMS.`});
+
+  if (vel !== null) {
+    if (vel < 4)      rs.push({i:'📉', t:`<strong>Velocidad baja:</strong> ${vel>=0?'+':''}${vel} cm. Derivar endocrinología.`});
+    else if (vel < 5) rs.push({i:'↘️', t:`<strong>Velocidad límite:</strong> ${vel>=0?'+':''}${vel} cm. Vigilar.`});
+    else              rs.push({i:'📈', t:`<strong>Velocidad OK:</strong> ${vel>=0?'+':''}${vel} cm.`});
+  } else {
+    rs.push({i:'ℹ️', t:'Añade más medidas para calcular la velocidad de crecimiento.'});
+  }
+
+  if (diana && diff !== null)
+    rs.push({i:'🎯', t:`<strong>Diana familiar:</strong> ${diana.toFixed(1)} cm · Diferencia actual: <strong>${diff>0?'–'+diff:'+'+Math.abs(diff)} cm</strong>`});
+
+  return `<div class="card" style="border-top:3px solid ${col}">
+    <div class="cname" style="color:${col}">${kid.name}</div>
+    <div class="cmeta">${calcAge(kid.dob)} años · Última: ${fmtDate(last.fecha)}</div>
+    <div class="mets">
+      <div class="met"><div class="mv" style="color:${col}">${last.talla}</div><div class="ml">cm</div></div>
+      <div class="met"><div class="mv" style="color:${col}">${last.peso||'—'}</div><div class="ml">kg</div></div>
+      <div class="met"><div class="mv" style="color:${col}">${p.lbl}</div><div class="ml">percentil</div></div>
+      ${vel!==null?`<div class="met"><div class="mv" style="color:${col}">${vel>=0?'+':''}${vel}</div><div class="ml">cm Δ</div></div>`:''}
+    </div>
+    <div class="sp">${rs.map(r=>`<div class="sr"><span class="si">${r.i}</span><span class="st">${r.t}</span></div>`).join('')}</div>
+  </div>`;
+}
+
+function renderAlerts() {
+  const al = [], today = new Date();
+  D.config.kids.forEach((kid, i) => {
+    const rows = D.measures[String(i)] || [];
+    const diana = calcDiana(kid.sex, D.config.madre, D.config.padre);
+    const nm = kid.name;
+
+    if (!rows.length) {
+      al.push({t:'b', ico:'ℹ', h:`${nm} — sin datos`, p:'Añade la primera medida para activar el seguimiento.', a:null});
+      return;
+    }
+
+    const last  = rows[rows.length-1];
+    const ld    = parseDate(last.fecha);
+    const ds    = ld ? Math.floor((today - ld) / 86400000) : 0;
+    const ageNow = calcAgeDecimal(kid.dob);
+    const p     = pct(last.talla, last.edad || ageNow, kid.sex);
+
+    // Time since last measure
+    if (ds > 180)
+      al.push({t:'o', ico:'⏰', h:`${nm} — ${Math.floor(ds/30)} meses sin medir`,
+        p:`Última medida: ${fmtDate(last.fecha)}. Revisiones recomendadas cada 6 meses.`,
+        a:'Pedir cita al pediatra para revisión de talla y peso.'});
+
+    // Percentile alerts
+    if (p.n < 3)
+      al.push({t:'r', ico:'🚨', h:`${nm} — talla bajo P3`,
+        p:`Con ${last.talla} cm está por debajo del percentil 3 para su edad.`,
+        a:'Solicitar derivación URGENTE a endocrinología pediátrica. Llevar historial de medidas.'});
+    else if (p.n < 10)
+      al.push({t:'o', ico:'⚠', h:`${nm} — talla entre P3 y P10`,
+        p:'Percentil bajo. Requiere seguimiento activo.',
+        a:'En próxima visita pedir: IGF-1, IGFBP-3, TSH, T4L y Rx edad ósea.'});
+
+    // Velocity
+    if (rows.length >= 2) {
+      const prev = rows[rows.length-2];
+      const pd = parseDate(prev.fecha);
+      const mo = (ld && pd) ? (ld - pd) / (30 * 86400000) : 0;
+      if (mo >= 5) {
+        const v6 = (last.talla - prev.talla) * (6 / mo);
+        if (v6 < 4)
+          al.push({t:'r', ico:'📉', h:`${nm} — velocidad de crecimiento baja`,
+            p:`Estimada: ${v6.toFixed(1)} cm/6 meses (mínimo: 4 cm).`,
+            a:'Derivar a endocrinología pediátrica. Solicitar pruebas de estimulación de GH en hospital de día.'});
+        else if (v6 < 5)
+          al.push({t:'o', ico:'↓', h:`${nm} — velocidad en límite`,
+            p:`${v6.toFixed(1)} cm/6 meses. Vigilar.`,
+            a:'Medir de nuevo en 3 meses. Si persiste, consultar al pediatra.'});
+        else
+          al.push({t:'g', ico:'✓', h:`${nm} — velocidad de crecimiento normal`,
+            p:`${v6.toFixed(1)} cm/6 meses. Dentro de rango.`, a:null});
+      }
+    }
+
+    // Overdue calendar items
+    const cal = genCalendar(kid, diana);
+    const overdue = cal.filter(c => !D.done[c.id] && parseDate(c.date) <= today);
+    if (overdue.length) {
+      const ov = overdue[0];
+      al.push({t:'y', ico:'📅', h:`${nm} — revisión pendiente: ${ov.label}`,
+        p:`Prevista para: ${fmtDate(ov.date)}. ${ov.who}.`,
+        a:ov.action});
+      // If more than 1 overdue, add summary
+      if (overdue.length > 1)
+        al.push({t:'y', ico:'📋', h:`${nm} — ${overdue.length} revisiones pendientes en total`,
+          p:`Revisa el calendario de ${nm} para ver todas las revisiones atrasadas.`, a:null});
+    }
+  });
+
+  if (!al.length)
+    al.push({t:'g', ico:'✓', h:'Todo en orden', p:'Sin alertas activas. Sigue con el seguimiento habitual.', a:null});
+
+  const tc = {r:'ar', o:'ao', g:'ag', b:'ab', y:'ay'};
+  el('alerts-box').innerHTML = al.map(a => `
+    <div class="alert ${tc[a.t]||'ab'}"><span class="aico">${a.ico}</span>
+    <div class="abody"><h4>${a.h}</h4><p>${a.p}</p>
+    ${a.a ? `<div class="wtd"><strong>Qué hacer:</strong> ${a.a}</div>` : ''}
+    </div></div>`).join('');
+}
+
+function renderUpcoming() {
+  const today = new Date();
+  const all = [];
+  D.config.kids.forEach((kid, i) => {
+    const diana = calcDiana(kid.sex, D.config.madre, D.config.padre);
+    const cal = genCalendar(kid, diana);
+    cal.forEach(e => all.push({...e, kidIdx:i, col:COLORS[i]}));
+  });
+
+  // Show: overdue (past + not done) first, then future upcoming
+  const overdue  = all.filter(e => !D.done[e.id] && parseDate(e.date) < today)
+                      .sort((a,b) => parseDate(b.date) - parseDate(a.date)); // most recent first
+  const upcoming = all.filter(e => !D.done[e.id] && parseDate(e.date) >= today)
+                      .sort((a,b) => parseDate(a.date) - parseDate(b.date))
+                      .slice(0, 4);
+
+  const show = [...overdue.slice(0,3), ...upcoming].slice(0, 6);
+
+  if (!show.length) {
+    el('rev-box').innerHTML = '<p style="font-size:.875rem;color:var(--text3)">¡Todo al día! No hay revisiones pendientes.</p>';
+    return;
+  }
+
+  el('rev-box').innerHTML = show.map(e => {
+    const d = parseDate(e.date);
+    const isPast = d < today;
+    const mo = Math.round(Math.abs(d - today) / (30 * 86400000));
+    const urgent = e.type === 'clave' || e.type === 'prioritaria';
+    const dotColor = isPast ? 'var(--red)' : urgent ? 'var(--red)' : e.col;
+    const timeStr = isPast
+      ? `<span style="color:var(--red);font-weight:600">Atrasada ${mo} mes${mo!==1?'es':''}</span>`
+      : mo > 0 ? `~${mo} meses` : 'próximamente';
+    return `<div class="ri">
+      <div class="rdot" style="background:${dotColor}"></div>
+      <div class="rbody">
+        <h4>${D.config.kids[e.kidIdx].name} · ${e.label}</h4>
+        <p>${e.desc.substring(0,70)}...</p>
+        <div class="rdate">${e.who} · ${fmtDate(e.date)} · ${timeStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDetail(i) {
+  const kid = D.config.kids[i];
+  const rows = D.measures[String(i)] || [];
+  const diana = calcDiana(kid.sex, D.config.madre, D.config.padre);
+  const ageNow = calcAgeDecimal(kid.dob);
+  const col = COLORS[i];
+  const oms = OMS[kid.sex] || OMS.M;
+
+  // Update age display
+  const ageEl = el('age-k'+i);
+  if (ageEl) ageEl.textContent = calcAge(kid.dob) + ' años';
+
+  // TABLE
+  const tbl = el('tbl-'+i);
+  if (!rows.length) {
+    tbl.innerHTML = '<div class="empty">Sin medidas. Pulsa "+ Añadir medida".</div>';
+  } else {
+    const rev = [...rows].reverse();
+    tbl.innerHTML = `<table><thead><tr>
+      <th>Fecha</th><th>Edad</th><th>Talla cm</th><th>Peso kg</th><th>Δ cm</th><th>Percentil</th><th>Notas</th><th></th>
+    </tr></thead><tbody>${rev.map((r,ri) => {
+      const oi = rows.length-1-ri;
+      const pv = oi > 0 ? rows[oi-1] : null;
+      const v  = pv ? (r.talla - pv.talla).toFixed(1) : '—';
+      const vs = v!=='—' ? (parseFloat(v)<4?'color:var(--red)':parseFloat(v)<5?'color:var(--ora)':'color:var(--grn)') : '';
+      const p  = pct(r.talla, r.edad || ageNow, kid.sex);
+      const ps = p.n<3?'background:var(--redl);color:var(--red)':p.n<10?'background:var(--oral);color:var(--ora)':p.n<25?'background:var(--yell);color:var(--yel)':'background:var(--grnl);color:var(--grn)';
+      return `<tr>
+        <td class="tm">${fmtDate(r.fecha)}</td>
+        <td class="tm">${r.edad ? parseFloat(r.edad).toFixed(1) : '—'}</td>
+        <td class="tm"><strong>${r.talla}</strong></td>
+        <td class="tm">${r.peso || '—'}</td>
+        <td class="tm" style="${vs}">${v!=='—'?(parseFloat(v)>=0?'+':'')+v:'—'}</td>
+        <td><span class="pb" style="${ps}">${p.lbl}</span></td>
+        <td style="font-size:.78rem;color:var(--text2)">${r.obs||''}</td>
+        <td><button class="ebtn" onclick="editRow(${i},${oi})" title="Editar">✎</button><button class="dbtn" onclick="deleteRow(${i},${oi})" title="Eliminar">✕</button></td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+  }
+
+  // CHART
+  renderChart(i, rows, oms, ageNow, col, diana);
+
+  // CALENDAR
+  const cal = genCalendar(kid, diana);
+  const today = new Date();
+  el('cal-'+i).innerHTML = cal.map(item => {
+    const d = parseDate(item.date);
+    const isPast = d && d < today;
+    const isSoon = d && !isPast && (d - today) < 90 * 86400000;
+    const isDone = !!D.done[item.id];
+    const isCl   = item.type === 'clave' || item.type === 'prioritaria';
+    const cls    = isDone ? 'done' : (!isDone && isPast && isCl) ? 'overdue' : (!isDone && (isPast || isSoon)) ? 'soon' : '';
+    const tgc    = {routine:'tro', preventiva:'tpv', clave:'tcl', prioritaria:'tpr'}[item.type] || 'tro';
+
+    let sm = '';
+    if (isDone)      sm = `<div class="cstat" style="background:var(--grnl);color:var(--grn)">✓ Realizada</div>`;
+    else if (isPast) sm = `<div class="cstat" style="background:var(--redl);color:var(--red)">⏰ Atrasada — marca ✓ cuando la hagas</div>`;
+    else if (isSoon) sm = `<div class="cstat" style="background:var(--yell);color:var(--yel)">📅 Próxima en menos de 3 meses</div>`;
+
+    return `<div class="ci ${cls}">
+      <div class="ctop">
+        <span class="ctag ${tgc}">${item.type}</span>
+        <button class="cchk" onclick="toggleDone('${item.id}')" title="${isDone?'Desmarcar':'Marcar como realizada'}">${isDone?'✓':'○'}</button>
+      </div>
+      <h4>${item.label}</h4>
+      <p>${item.desc}</p>
+      <div class="cact"><strong>Qué hacer:</strong> ${item.action}</div>
+      <div class="cdate">${item.who} · ${fmtDate(item.date)}</div>
+      ${sm}
+    </div>`;
+  }).join('');
+}
+
+function renderChart(i, rows, oms, ageNow, col, diana) {
+  const cv = el('chart-'+i);
+  if (CHARTS[i]) { CHARTS[i].destroy(); delete CHARTS[i]; }
+
+  const minAge = Math.max(3, Math.floor(ageNow) - 1);
+  const maxAge = Math.max(...Object.keys(oms).map(Number));
+  const ages = [];
+  for (let a = minAge; a <= maxAge; a++) ages.push(a);
+  const lbls = ages.map(a => a+'a');
+
+  const curves = [
+    {k:'p97',c:'#e8dfd0'},{k:'p75',c:'#d8cfc0'},
+    {k:'p50',c:'#b8a888'},{k:'p25',c:'#d8cfc0'},
+    {k:'p10',c:'#e8dfd0'},{k:'p3', c:'#f5c2bc'}
+  ];
+
+  const ds = curves.map(cv => ({
+    label: cv.k.toUpperCase(),
+    data: ages.map(a => oms[a]?.[cv.k] ?? null),
+    borderColor: cv.c, borderWidth: cv.k==='p50'?1.5:1,
+    borderDash: cv.k==='p50'?[4,3]:cv.k==='p3'?[3,3]:[],
+    pointRadius: 0, fill: false, tension: .3
+  }));
+
+  let ulbs = lbls;
+  const kid = D.config.kids[i];
+
+  if (rows.length) {
+    const ra = rows.map(r => parseFloat(r.edad || ageNow).toFixed(1)+'a');
+    ulbs = [...new Set([...lbls, ...ra])].sort((a,b) => parseFloat(a)-parseFloat(b));
+
+    ds.forEach(d => {
+      const k = d.label.toLowerCase(), m = {};
+      ages.forEach(a => { if (oms[a]) m[a+'a'] = oms[a][k]; });
+      d.data = ulbs.map(l => m[l] ?? null);
+    });
+
+    const m = {};
+    rows.forEach(r => { m[parseFloat(r.edad||ageNow).toFixed(1)+'a'] = r.talla; });
+    ds.push({
+      label: kid.name,
+      data: ulbs.map(l => m[l] ?? null),
+      borderColor: col, backgroundColor: col,
+      borderWidth: 2.5, pointRadius: 5, pointHoverRadius: 7,
+      fill: false, tension: .3, spanGaps: true
+    });
+  }
+
+  if (diana) {
+    ds.push({
+      label: 'Diana',
+      data: ulbs.map(() => diana),
+      borderColor: col, borderWidth: 1.5,
+      borderDash: [6, 4], pointRadius: 0, fill: false, tension: 0
+    });
+  }
+
+  CHARTS[i] = new Chart(cv, {
+    type: 'line',
+    data: { labels: ulbs, datasets: ds },
+    options: {
+      responsive: true, maintainAspectRatio: true, spanGaps: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.dataset.label+': '+ctx.raw+' cm' } }
+      },
+      scales: {
+        x: { grid:{color:'#f0ece5'}, ticks:{font:{family:'DM Mono',size:10}} },
+        y: { grid:{color:'#f0ece5'}, ticks:{font:{family:'DM Mono',size:10}},
+             title:{display:true,text:'cm',font:{size:10},color:'#a09890'} }
+      }
+    }
+  });
+
+  el('leg-'+i).innerHTML =
+    curves.map(cv => `<span><i style="background:${cv.c}"></i>${cv.k.toUpperCase()}</span>`).join('') +
+    `<span><i style="background:${col}"></i>${kid.name}</span>` +
+    (diana ? `<span><i style="background:${col};opacity:.5"></i>Diana</span>` : '');
+}
+
+// ══════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════
+function showTab(n, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el('s-'+n).classList.add('active');
+  btn.classList.add('active');
+}
+function openModal(kidIdx) {
+  ACT_KID = kidIdx;
+  ACT_EDIT = -1;
+  const kid = D.config.kids[kidIdx];
+  const diana = calcDiana(kid.sex, D.config.madre, D.config.padre);
+  el('m-title').textContent = 'Añadir medida · '+kid.name;
+  el('m-sub').textContent = `${kid.sex==='M'?'Niño':'Niña'} · ${calcAge(kid.dob)} años`+(diana?` · Diana: ${diana.toFixed(1)} cm`:'');
+  el('btn-sub').style.background = COLORS[kidIdx];
+  el('btn-sub').textContent = 'Guardar';
+  el('f-fecha').value = todayStr();
+  el('f-edad').value = calcAgeDecimal(kid.dob).toFixed(1);
+  ['f-talla','f-peso','f-obs'].forEach(id => el(id).value = '');
+  el('ov-measure').classList.add('open');
+}
+
+function editRow(kidIdx, rowIdx) {
+  ACT_KID = kidIdx;
+  ACT_EDIT = rowIdx;
+  const kid = D.config.kids[kidIdx];
+  const row = D.measures[String(kidIdx)][rowIdx];
+  const diana = calcDiana(kid.sex, D.config.madre, D.config.padre);
+  el('m-title').textContent = 'Editar medida · '+kid.name;
+  el('m-sub').textContent = `${kid.sex==='M'?'Niño':'Niña'} · ${calcAge(kid.dob)} años`+(diana?` · Diana: ${diana.toFixed(1)} cm`:'');
+  el('btn-sub').style.background = COLORS[kidIdx];
+  el('btn-sub').textContent = 'Guardar cambios';
+  el('f-fecha').value = row.fecha;
+  el('f-edad').value = row.edad ? parseFloat(row.edad).toFixed(1) : '';
+  el('f-talla').value = row.talla;
+  el('f-peso').value = row.peso || '';
+  el('f-obs').value = row.obs || '';
+  el('ov-measure').classList.add('open');
+}
+function closeModal(id) { el(id).classList.remove('open'); }
+function el(id) { return document.getElementById(id); }
+function show(id) { document.getElementById(id).style.display = 'flex'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function toast(msg) {
+  const t = el('toast'); t.textContent = msg;
+  t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 3500);
+}
+
+el('f-fecha').addEventListener('input', formatDateInput);
+document.querySelectorAll('.overlay').forEach(o =>
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+</script>
+</body>
+</html>
