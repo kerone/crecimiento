@@ -216,18 +216,65 @@ tr:hover td{background:var(--surface2)}
 
 <!-- MEASURE MODAL -->
 <div class="overlay" id="ov-measure">
-  <div class="modal">
+  <div class="modal modal-lg">
     <div class="mt" id="m-title">Añadir medida</div>
     <div class="ms" id="m-sub"></div>
+
     <div class="frow">
       <div class="fg"><label>Fecha (dd-mm-aaaa)</label><input type="text" id="f-fecha" placeholder="18-05-2026" maxlength="10"></div>
-      <div class="fg"><label>Edad (años)</label><input type="number" id="f-edad" step="0.1" min="0" max="20"></div>
+      <div class="fg"><label>Tipo de visita</label>
+        <select id="f-tipo">
+          <option value="rutina">Rutina (pediatra)</option>
+          <option value="casa">En casa</option>
+          <option value="endocrino">Endocrino</option>
+          <option value="analitica">Analítica</option>
+          <option value="urgencias">Urgencias</option>
+          <option value="otro">Otra</option>
+        </select>
+      </div>
     </div>
+
     <div class="frow">
-      <div class="fg"><label>Talla (cm)</label><input type="number" id="f-talla" step="0.1" min="40" max="220"></div>
-      <div class="fg"><label>Peso (kg)</label><input type="number" id="f-peso" step="0.1" min="5" max="150"></div>
+      <div class="fg"><label>Edad (años)</label><input type="number" id="f-edad" step="0.1" min="0" max="20"></div>
+      <div class="fg"><label>Talla (cm) <span style="color:var(--red)">*</span></label><input type="number" id="f-talla" step="0.1" min="40" max="220"></div>
     </div>
-    <div class="fg"><label>Observaciones</label><textarea id="f-obs" rows="2" placeholder="Revisión rutinaria, resultado análisis..."></textarea></div>
+
+    <div class="frow">
+      <div class="fg"><label>Peso (kg)</label><input type="number" id="f-peso" step="0.1" min="2" max="150"></div>
+      <div class="fg"><label>IMC (auto)</label><input type="text" id="f-imc" readonly style="background:var(--surface2);color:var(--text2)"></div>
+    </div>
+
+    <details style="margin-bottom:1rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;padding:.6rem .9rem">
+      <summary style="cursor:pointer;font-size:.78rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em">+ Datos adicionales</summary>
+      <div style="margin-top:.85rem">
+        <div class="frow">
+          <div class="fg"><label>Perímetro craneal (cm)</label><input type="number" id="f-pc" step="0.1" min="25" max="65" placeholder="solo <3 años"></div>
+          <div class="fg"><label>Edad ósea (años)</label><input type="number" id="f-ebone" step="0.1" min="0" max="18" placeholder="tras Rx"></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label>Estadio Tanner</label>
+            <select id="f-tanner">
+              <option value="">—</option>
+              <option value="1">1 — prepuberal</option>
+              <option value="2">2 — inicio</option>
+              <option value="3">3 — intermedio</option>
+              <option value="4">4 — avanzado</option>
+              <option value="5">5 — adulto</option>
+            </select>
+          </div>
+          <div class="fg"><label>TA sistólica/diastólica</label>
+            <div style="display:flex;gap:.4rem;align-items:center">
+              <input type="number" id="f-tas" min="50" max="200" placeholder="120" style="flex:1">
+              <span style="color:var(--text3)">/</span>
+              <input type="number" id="f-tad" min="30" max="130" placeholder="80" style="flex:1">
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <div class="fg"><label>Observaciones</label><textarea id="f-obs" rows="2" placeholder="Resultado IGF-1, comentarios del pediatra..."></textarea></div>
+
     <div class="macts">
       <button class="bcncl" onclick="closeModal('ov-measure')">Cancelar</button>
       <button class="bsub" id="btn-sub" onclick="saveMeasure()" style="background:#1e4d35">Guardar</button>
@@ -245,6 +292,10 @@ tr:hover td{background:var(--surface2)}
       <div class="fg"><label>Talla padre (cm)</label><input type="number" id="s-padre" step="0.5"></div>
     </div>
     <hr class="section-sep">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem">
+      <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)">Hijos</div>
+      <button onclick="addKidInSettings()" style="background:#1e4d35;color:white;border:none;border-radius:8px;padding:.4rem .9rem;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer">+ Añadir hijo</button>
+    </div>
     <div id="s-kids"></div>
     <div class="macts">
       <button class="bcncl" onclick="closeModal('ov-settings')">Cancelar</button>
@@ -648,16 +699,24 @@ async function saveMeasure() {
   if (!talla) { toast('La talla es obligatoria'); return; }
   const key = String(ACT_KID);
   if (!D.measures[key]) D.measures[key] = [];
+  const peso = parseFloat(el('f-peso').value) || 0;
+  const tallaN = parseFloat(talla);
+  const imc = peso && tallaN ? +(peso / Math.pow(tallaN/100, 2)).toFixed(1) : 0;
   const row = {
-    fecha, talla: parseFloat(talla),
+    fecha, talla: tallaN,
     edad: parseFloat(el('f-edad').value) || parseFloat(calcAgeDecimal(D.config.kids[ACT_KID].dob).toFixed(1)),
-    peso: parseFloat(el('f-peso').value) || 0,
+    peso, imc,
+    tipo: el('f-tipo').value || 'rutina',
+    pc:    parseFloat(el('f-pc').value) || 0,
+    ebone: parseFloat(el('f-ebone').value) || 0,
+    tanner: el('f-tanner').value || '',
+    tas: parseInt(el('f-tas').value) || 0,
+    tad: parseInt(el('f-tad').value) || 0,
     obs: el('f-obs').value.trim()
   };
   el('btn-sub').textContent = 'Guardando...';
   try {
     if (ACT_EDIT >= 0) {
-      // Replace existing row
       const old = D.measures[key][ACT_EDIT];
       D.measures[key][ACT_EDIT] = row;
       D.measures[key].sort((a,b) => parseDate(a.fecha) - parseDate(b.fecha));
@@ -668,7 +727,6 @@ async function saveMeasure() {
         D.measures[key][ACT_EDIT] = old; toast('Error: '+e.message);
       }
     } else {
-      // New row
       D.measures[key].push(row);
       D.measures[key].sort((a,b) => parseDate(a.fecha) - parseDate(b.fecha));
       try {
@@ -702,42 +760,86 @@ async function toggleDone(id) {
 // ══════════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════════
+let SETTINGS_KIDS = [];   // working copy while modal is open
+
 function openSettings() {
   el('s-madre').value = D.config.madre || '';
   el('s-padre').value = D.config.padre || '';
+  // clone current kids, tracking original index for measure remapping
+  SETTINGS_KIDS = D.config.kids.map((k, i) => ({ ...k, _origIdx: i }));
+  renderSettingsKids();
+  el('ov-settings').classList.add('open');
+}
+
+function renderSettingsKids() {
   let html = '';
-  D.config.kids.forEach((k,i) => {
-    html += `<div class="child-block" style="margin-bottom:.75rem">
-      <div class="child-block-title">${k.name}</div>
+  SETTINGS_KIDS.forEach((k, i) => {
+    const isNew = k._origIdx === undefined;
+    html += `<div class="child-block" style="margin-bottom:.75rem;position:relative">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
+        <div class="child-block-title" style="margin-bottom:0">${k.name || 'Hijo nuevo'} ${isNew?'<span style="color:var(--grn);font-size:.7rem">(nuevo)</span>':''}</div>
+        <button onclick="removeKidInSettings(${i})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:1rem" title="Eliminar">🗑</button>
+      </div>
       <div class="frow">
-        <div class="fg"><label>Nombre</label><input type="text" id="s-name-${i}" value="${k.name}"></div>
+        <div class="fg"><label>Nombre</label><input type="text" id="s-name-${i}" value="${k.name||''}" oninput="SETTINGS_KIDS[${i}].name=this.value"></div>
         <div class="fg"><label>Sexo</label>
-          <select id="s-sex-${i}">
+          <select id="s-sex-${i}" onchange="SETTINGS_KIDS[${i}].sex=this.value">
             <option value="M"${k.sex==='M'?' selected':''}>Niño</option>
             <option value="F"${k.sex==='F'?' selected':''}>Niña</option>
           </select>
         </div>
       </div>
       <div class="fg"><label>Fecha nacimiento (dd-mm-aaaa)</label>
-        <input type="text" id="s-dob-${i}" value="${k.dob}" maxlength="10">
+        <input type="text" id="s-dob-${i}" value="${k.dob||''}" maxlength="10" oninput="SETTINGS_KIDS[${i}].dob=this.value">
       </div>
     </div>`;
   });
+  if (!SETTINGS_KIDS.length) {
+    html = '<p style="text-align:center;color:var(--text3);font-size:.85rem;padding:1rem">Sin hijos. Pulsa "+ Añadir hijo" arriba.</p>';
+  }
   el('s-kids').innerHTML = html;
-  D.config.kids.forEach((_,i) => el('s-dob-'+i).addEventListener('input', formatDateInput));
-  el('ov-settings').classList.add('open');
+  SETTINGS_KIDS.forEach((_,i) => {
+    const dobEl = el('s-dob-'+i);
+    if (dobEl) dobEl.addEventListener('input', formatDateInput);
+  });
+}
+
+function addKidInSettings() {
+  SETTINGS_KIDS.push({ name:'', sex:'M', dob:'' });
+  renderSettingsKids();
+}
+
+function removeKidInSettings(i) {
+  const k = SETTINGS_KIDS[i];
+  const isExisting = k._origIdx !== undefined;
+  const msg = isExisting
+    ? `¿Eliminar a ${k.name}? Se borrarán también todas sus medidas guardadas.`
+    : '¿Eliminar este hijo nuevo?';
+  if (!confirm(msg)) return;
+  SETTINGS_KIDS.splice(i, 1);
+  renderSettingsKids();
 }
 
 async function saveSettings() {
   const madre = parseFloat(el('s-madre').value);
   const padre = parseFloat(el('s-padre').value);
   if (!madre || !padre) { toast('Tallas de padres inválidas'); return; }
-  const kids = D.config.kids.map((_,i) => ({
-    name: (el('s-name-'+i).value||'').trim() || D.config.kids[i].name,
-    sex:  el('s-sex-'+i).value,
-    dob:  (el('s-dob-'+i).value||'').trim()
-  }));
-  D.config = { madre, padre, kids };
+  if (!SETTINGS_KIDS.length) { toast('Debe haber al menos un hijo'); return; }
+  for (let i = 0; i < SETTINGS_KIDS.length; i++) {
+    const k = SETTINGS_KIDS[i];
+    if (!k.name || !k.name.trim()) { toast(`Falta nombre en hijo ${i+1}`); return; }
+    if (!isValidDate(k.dob)) { toast(`Fecha inválida en ${k.name||'hijo '+(i+1)}. Usa dd-mm-aaaa`); return; }
+  }
+  // Build new kids array and remap measures
+  const newKids = SETTINGS_KIDS.map(k => ({ name:k.name.trim(), sex:k.sex, dob:k.dob.trim() }));
+  const newMeasures = {};
+  SETTINGS_KIDS.forEach((k, newIdx) => {
+    if (k._origIdx !== undefined && D.measures[String(k._origIdx)]) {
+      newMeasures[String(newIdx)] = D.measures[String(k._origIdx)];
+    }
+  });
+  D.config = { madre, padre, kids: newKids };
+  D.measures = newMeasures;
   try {
     await binPut(D);
     closeModal('ov-settings'); toast('✓ Guardado');
@@ -880,6 +982,45 @@ function renderAlerts() {
       }
     }
 
+    // Bone age vs chronological age
+    if (last.ebone && last.edad) {
+      const ebDiff = last.edad - last.ebone;
+      if (ebDiff >= 2)
+        al.push({t:'o', ico:'🦴', h:`${nm} — edad ósea retrasada`,
+          p:`Edad cronológica ${last.edad.toFixed(1)} años vs edad ósea ${last.ebone.toFixed(1)} años (${ebDiff.toFixed(1)} años de retraso).`,
+          a:'Retraso > 2 años sugiere posible déficit hormonal. Consultar endocrinología para evaluación completa.'});
+      else if (ebDiff <= -2)
+        al.push({t:'o', ico:'🦴', h:`${nm} — edad ósea avanzada`,
+          p:`Edad ósea ${last.ebone.toFixed(1)} años vs edad cronológica ${last.edad.toFixed(1)} años (${Math.abs(ebDiff).toFixed(1)} años por delante).`,
+          a:'Edad ósea avanzada puede indicar pubertad precoz. Las epífisis se cerrarán antes, reduciendo la talla final. Consultar endocrinología.'});
+    }
+
+    // Blood pressure
+    if (last.tas && last.tad) {
+      const age = last.edad || ageNow;
+      // Rough age-adjusted thresholds (P95 approximate)
+      const tasHi = age < 10 ? 115 : age < 13 ? 125 : 135;
+      const tadHi = age < 10 ? 75 : age < 13 ? 80 : 85;
+      if (last.tas > tasHi || last.tad > tadHi)
+        al.push({t:'o', ico:'❤️', h:`${nm} — tensión arterial elevada`,
+          p:`Última TA: ${last.tas}/${last.tad} mmHg.`,
+          a:'Confirmar con varias medidas en distintos días. Si persiste por encima de los valores normales para la edad, consultar pediatra.'});
+    }
+
+    // IMC alerts
+    if (last.imc) {
+      // Rough IMC thresholds (OMS aproximado)
+      const age = last.edad || ageNow;
+      if (last.imc < 14)
+        al.push({t:'o', ico:'⚖', h:`${nm} — IMC bajo`,
+          p:`IMC: ${last.imc}. Posible bajo peso.`,
+          a:'Comentar con pediatra. Valorar evaluación nutricional.'});
+      else if (last.imc > (age < 6 ? 18 : age < 10 ? 21 : age < 14 ? 25 : 27))
+        al.push({t:'o', ico:'⚖', h:`${nm} — IMC elevado`,
+          p:`IMC: ${last.imc}.`,
+          a:'Comentar con pediatra. Valorar hábitos de alimentación y actividad física.'});
+    }
+
     // Overdue calendar items
     const cal = genCalendar(kid, diana);
     const overdue = cal.filter(c => !D.done[c.id] && parseDate(c.date) <= today);
@@ -967,8 +1108,8 @@ function renderDetail(i) {
     tbl.innerHTML = '<div class="empty">Sin medidas. Pulsa "+ Añadir medida".</div>';
   } else {
     const rev = [...rows].reverse();
-    tbl.innerHTML = `<table><thead><tr>
-      <th>Fecha</th><th>Edad</th><th>Talla cm</th><th>Peso kg</th><th>Δ cm</th><th>Percentil</th><th>Notas</th><th></th>
+    tbl.innerHTML = `<div style="overflow-x:auto"><table><thead><tr>
+      <th>Fecha</th><th>Tipo</th><th>Edad</th><th>Talla</th><th>Peso</th><th>IMC</th><th>Δ cm</th><th>Percentil</th><th>Tanner</th><th>E. ósea</th><th>PC</th><th>TA</th><th>Notas</th><th></th>
     </tr></thead><tbody>${rev.map((r,ri) => {
       const oi = rows.length-1-ri;
       const pv = oi > 0 ? rows[oi-1] : null;
@@ -976,17 +1117,25 @@ function renderDetail(i) {
       const vs = v!=='—' ? (parseFloat(v)<4?'color:var(--red)':parseFloat(v)<5?'color:var(--ora)':'color:var(--grn)') : '';
       const p  = pct(r.talla, r.edad || ageNow, kid.sex);
       const ps = p.n<3?'background:var(--redl);color:var(--red)':p.n<10?'background:var(--oral);color:var(--ora)':p.n<25?'background:var(--yell);color:var(--yel)':'background:var(--grnl);color:var(--grn)';
+      const tipoLbl = {rutina:'Rutina',casa:'Casa',endocrino:'Endocrino',analitica:'Analítica',urgencias:'Urgencias',otro:'Otro'}[r.tipo||'rutina'];
+      const ta = (r.tas && r.tad) ? `${r.tas}/${r.tad}` : '—';
       return `<tr>
         <td class="tm">${fmtDate(r.fecha)}</td>
+        <td style="font-size:.76rem;color:var(--text2)">${tipoLbl}</td>
         <td class="tm">${r.edad ? parseFloat(r.edad).toFixed(1) : '—'}</td>
         <td class="tm"><strong>${r.talla}</strong></td>
         <td class="tm">${r.peso || '—'}</td>
+        <td class="tm">${r.imc || '—'}</td>
         <td class="tm" style="${vs}">${v!=='—'?(parseFloat(v)>=0?'+':'')+v:'—'}</td>
         <td><span class="pb" style="${ps}">${p.lbl}</span></td>
-        <td style="font-size:.78rem;color:var(--text2)">${r.obs||''}</td>
+        <td class="tm">${r.tanner || '—'}</td>
+        <td class="tm">${r.ebone || '—'}</td>
+        <td class="tm">${r.pc || '—'}</td>
+        <td class="tm">${ta}</td>
+        <td style="font-size:.76rem;color:var(--text2);max-width:180px">${r.obs||''}</td>
         <td><button class="ebtn" onclick="editRow(${i},${oi})" title="Editar">✎</button><button class="dbtn" onclick="deleteRow(${i},${oi})" title="Eliminar">✕</button></td>
       </tr>`;
-    }).join('')}</tbody></table>`;
+    }).join('')}</tbody></table></div>`;
   }
 
   // CHART
@@ -1123,7 +1272,9 @@ function openModal(kidIdx) {
   el('btn-sub').textContent = 'Guardar';
   el('f-fecha').value = todayStr();
   el('f-edad').value = calcAgeDecimal(kid.dob).toFixed(1);
-  ['f-talla','f-peso','f-obs'].forEach(id => el(id).value = '');
+  el('f-tipo').value = 'rutina';
+  ['f-talla','f-peso','f-imc','f-pc','f-ebone','f-tas','f-tad','f-obs'].forEach(id => el(id).value = '');
+  el('f-tanner').value = '';
   el('ov-measure').classList.add('open');
 }
 
@@ -1141,8 +1292,22 @@ function editRow(kidIdx, rowIdx) {
   el('f-edad').value = row.edad ? parseFloat(row.edad).toFixed(1) : '';
   el('f-talla').value = row.talla;
   el('f-peso').value = row.peso || '';
+  el('f-imc').value = row.imc || '';
+  el('f-tipo').value = row.tipo || 'rutina';
+  el('f-pc').value = row.pc || '';
+  el('f-ebone').value = row.ebone || '';
+  el('f-tanner').value = row.tanner || '';
+  el('f-tas').value = row.tas || '';
+  el('f-tad').value = row.tad || '';
   el('f-obs').value = row.obs || '';
   el('ov-measure').classList.add('open');
+}
+
+function recalcIMC() {
+  const t = parseFloat(el('f-talla').value);
+  const p = parseFloat(el('f-peso').value);
+  if (t && p) el('f-imc').value = (p / Math.pow(t/100, 2)).toFixed(1);
+  else el('f-imc').value = '';
 }
 function closeModal(id) { el(id).classList.remove('open'); }
 function el(id) { return document.getElementById(id); }
@@ -1154,6 +1319,8 @@ function toast(msg) {
 }
 
 el('f-fecha').addEventListener('input', formatDateInput);
+el('f-talla').addEventListener('input', recalcIMC);
+el('f-peso').addEventListener('input', recalcIMC);
 document.querySelectorAll('.overlay').forEach(o =>
   o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
 </script>
