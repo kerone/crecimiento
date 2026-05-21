@@ -207,6 +207,7 @@ tr:hover td{background:var(--surface2)}
     <div class="logo" id="app-logo">Crece</div>
     <div class="hbtns">
       <button class="ibtn" onclick="loadData()" title="Sincronizar">↻</button>
+      <button class="ibtn" onclick="openImport()" title="Importar medidas en bloque">⇪</button>
       <button class="ibtn" onclick="openSettings()" title="Configuración">⚙</button>
     </div>
   </div>
@@ -282,6 +283,37 @@ tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
+<!-- IMPORT MODAL -->
+<div class="overlay" id="ov-import">
+  <div class="modal modal-lg">
+    <div class="mt">Importar medidas en bloque</div>
+    <div class="ms">Pega datos de mediciones en formato tabular (separados por tabulaciones o espacios). Formato: <code style="background:var(--surface2);padding:.1rem .3rem;border-radius:4px">Fecha</code> <code style="background:var(--surface2);padding:.1rem .3rem;border-radius:4px">Peso(kg)</code> <code style="background:var(--surface2);padding:.1rem .3rem;border-radius:4px">Talla(cm)</code></div>
+
+    <div class="fg">
+      <label>Selecciona el hijo</label>
+      <select id="imp-kid"></select>
+    </div>
+
+    <div class="fg">
+      <label>Datos (uno por línea)</label>
+      <textarea id="imp-data" rows="10" placeholder="03-01-2023&#9;2.980&#9;48.0&#10;10-01-2023&#9;2.950&#9;48.5&#10;..." style="font-family:monospace;font-size:.82rem"></textarea>
+    </div>
+
+    <div style="background:var(--blul);border:1.5px solid var(--blub);border-radius:9px;padding:.7rem .9rem;font-size:.78rem;color:var(--text2);line-height:1.5;margin-bottom:1rem">
+      <strong style="color:var(--blu)">Formato aceptado:</strong><br>
+      • Fechas <code>dd-mm-aaaa</code> o <code>dd/mm/aaaa</code><br>
+      • Separador: tab o múltiples espacios<br>
+      • Peso opcional (deja vacío si no hay)<br>
+      • Cualquier línea ininteligible se ignora
+    </div>
+
+    <div class="macts">
+      <button class="bcncl" onclick="closeModal('ov-import')">Cancelar</button>
+      <button class="bsub" id="btn-import" onclick="doImport()" style="background:#1e4d35">Importar</button>
+    </div>
+  </div>
+</div>
+
 <!-- SETTINGS MODAL -->
 <div class="overlay" id="ov-settings">
   <div class="modal modal-lg">
@@ -331,8 +363,8 @@ const COLORS_M = ['#3a7d56','#a855a0','#3b82f6','#f97316'];
 // OMS TABLES
 // ══════════════════════════════════════════
 const OMS = {
-  M:{3:{p3:88,p10:91,p25:94,p50:96,p75:99,p90:102,p97:104},4:{p3:94,p10:97,p25:100,p50:103,p75:106,p90:109,p97:112},5:{p3:100,p10:103,p25:107,p50:110,p75:113,p90:116,p97:119},6:{p3:106,p10:109,p25:113,p50:116,p75:120,p90:123,p97:126},7:{p3:111,p10:115,p25:118,p50:122,p75:126,p90:129,p97:132},8:{p3:116,p10:120,p25:124,p50:128,p75:132,p90:135,p97:138},9:{p3:121,p10:125,p25:129,p50:133,p75:137,p90:141,p97:144},10:{p3:126,p10:130,p25:134,p50:138,p75:143,p90:147,p97:150},11:{p3:131,p10:135,p25:139,p50:143,p75:148,p90:152,p97:156},12:{p3:136,p10:140,p25:145,p50:149,p75:154,p90:159,p97:163},13:{p3:143,p10:147,p25:152,p50:156,p75:161,p90:166,p97:170},14:{p3:151,p10:155,p25:159,p50:163,p75:168,p90:172,p97:176},15:{p3:155,p10:159,p25:163,p50:167,p75:171,p90:175,p97:179},16:{p3:158,p10:162,p25:165,p50:169,p75:173,p90:177,p97:181},17:{p3:159,p10:163,p25:166,p50:170,p75:174,p90:178,p97:182}},
-  F:{3:{p3:87,p10:90,p25:93,p50:95,p75:98,p90:101,p97:103},4:{p3:93,p10:96,p25:99,p50:102,p75:105,p90:108,p97:111},5:{p3:99,p10:102,p25:106,p50:109,p75:112,p90:115,p97:118},6:{p3:104,p10:108,p25:112,p50:115,p75:119,p90:122,p97:125},7:{p3:110,p10:114,p25:117,p50:121,p75:125,p90:128,p97:131},8:{p3:115,p10:119,p25:123,p50:127,p75:131,p90:134,p97:138},9:{p3:120,p10:125,p25:129,p50:133,p75:137,p90:141,p97:144},10:{p3:126,p10:130,p25:134,p50:138,p75:143,p90:147,p97:151},11:{p3:132,p10:136,p25:140,p50:144,p75:149,p90:153,p97:157},12:{p3:138,p10:142,p25:146,p50:151,p75:156,p90:160,p97:163},13:{p3:143,p10:147,p25:152,p50:156,p75:161,p90:165,p97:168},14:{p3:147,p10:151,p25:155,p50:159,p75:164,p90:168,p97:171},15:{p3:148,p10:152,p25:155,p50:160,p75:164,p90:168,p97:172},16:{p3:149,p10:152,p25:156,p50:160,p75:164,p90:168,p97:172}}
+  M:{0:{p3:46,p10:48,p25:49,p50:50,p75:51,p90:52,p97:53},1:{p3:71,p10:73,p25:74,p50:76,p75:78,p90:79,p97:81},2:{p3:81,p10:84,p25:86,p50:88,p75:90,p90:92,p97:94},3:{p3:88,p10:91,p25:94,p50:96,p75:99,p90:102,p97:104},4:{p3:94,p10:97,p25:100,p50:103,p75:106,p90:109,p97:112},5:{p3:100,p10:103,p25:107,p50:110,p75:113,p90:116,p97:119},6:{p3:106,p10:109,p25:113,p50:116,p75:120,p90:123,p97:126},7:{p3:111,p10:115,p25:118,p50:122,p75:126,p90:129,p97:132},8:{p3:116,p10:120,p25:124,p50:128,p75:132,p90:135,p97:138},9:{p3:121,p10:125,p25:129,p50:133,p75:137,p90:141,p97:144},10:{p3:126,p10:130,p25:134,p50:138,p75:143,p90:147,p97:150},11:{p3:131,p10:135,p25:139,p50:143,p75:148,p90:152,p97:156},12:{p3:136,p10:140,p25:145,p50:149,p75:154,p90:159,p97:163},13:{p3:143,p10:147,p25:152,p50:156,p75:161,p90:166,p97:170},14:{p3:151,p10:155,p25:159,p50:163,p75:168,p90:172,p97:176},15:{p3:155,p10:159,p25:163,p50:167,p75:171,p90:175,p97:179},16:{p3:158,p10:162,p25:165,p50:169,p75:173,p90:177,p97:181},17:{p3:159,p10:163,p25:166,p50:170,p75:174,p90:178,p97:182},18:{p3:160,p10:164,p25:167,p50:171,p75:175,p90:178,p97:182},19:{p3:160,p10:164,p25:167,p50:171,p75:175,p90:179,p97:182}},
+  F:{0:{p3:46,p10:47,p25:48,p50:49,p75:51,p90:52,p97:53},1:{p3:69,p10:71,p25:73,p50:74,p75:76,p90:78,p97:79},2:{p3:80,p10:82,p25:85,p50:87,p75:89,p90:91,p97:93},3:{p3:87,p10:90,p25:93,p50:95,p75:98,p90:101,p97:103},4:{p3:93,p10:96,p25:99,p50:102,p75:105,p90:108,p97:111},5:{p3:99,p10:102,p25:106,p50:109,p75:112,p90:115,p97:118},6:{p3:104,p10:108,p25:112,p50:115,p75:119,p90:122,p97:125},7:{p3:110,p10:114,p25:117,p50:121,p75:125,p90:128,p97:131},8:{p3:115,p10:119,p25:123,p50:127,p75:131,p90:134,p97:138},9:{p3:120,p10:125,p25:129,p50:133,p75:137,p90:141,p97:144},10:{p3:126,p10:130,p25:134,p50:138,p75:143,p90:147,p97:151},11:{p3:132,p10:136,p25:140,p50:144,p75:149,p90:153,p97:157},12:{p3:138,p10:142,p25:146,p50:151,p75:156,p90:160,p97:163},13:{p3:143,p10:147,p25:152,p50:156,p75:161,p90:165,p97:168},14:{p3:147,p10:151,p25:155,p50:159,p75:164,p90:168,p97:171},15:{p3:148,p10:152,p25:155,p50:160,p75:164,p90:168,p97:172},16:{p3:149,p10:152,p25:156,p50:160,p75:164,p90:168,p97:172},17:{p3:149,p10:152,p25:156,p50:160,p75:164,p90:168,p97:172},18:{p3:149,p10:152,p25:156,p50:160,p75:164,p90:168,p97:172},19:{p3:149,p10:152,p25:156,p50:160,p75:164,p90:168,p97:172}}
 };
 
 // ══════════════════════════════════════════
@@ -418,6 +450,23 @@ function calcAgeDecimal(dob) {
   const d = parseDate(dob);
   if (!d) return 0;
   return Math.max(0, (new Date() - d) / (365.25 * 86400000));
+}
+
+// Age (decimal) at a given measurement date
+function ageAtDate(dob, fechaStr) {
+  const d = parseDate(dob);
+  const f = parseDate(fechaStr);
+  if (!d || !f) return 0;
+  return Math.max(0, (f - d) / (365.25 * 86400000));
+}
+
+// Get the REAL age of a measurement: always recompute from dob + fecha
+// Fallback to stored r.edad only if fecha is invalid
+function measureAge(kid, row) {
+  if (!row) return 0;
+  const fromDate = ageAtDate(kid.dob, row.fecha);
+  if (fromDate > 0) return fromDate;
+  return parseFloat(row.edad) || 0;
 }
 
 function calcDiana(sex, madre, padre) {
@@ -652,13 +701,15 @@ function initApp() {
 
   // Tabs
   el('tabs').innerHTML = `<button class="tab active" onclick="showTab('dash',this)">Panel</button>` +
-    kids.map((k,i) => `<button class="tab" style="--c:${COLORS[i]}" onclick="showTab('k${i}',this)" id="tab-k${i}">${k.name}</button>`).join('');
+    kids.map((k,i) => `<button class="tab" style="--c:${COLORS[i]}" onclick="showTab('k${i}',this)" id="tab-k${i}">${k.name}</button>`).join('') +
+    `<button class="tab" onclick="showTab('comp',this)" id="tab-comp">📊 Comparativa</button>`;
 
   // CSS for active tab colors
   const style = document.createElement('style');
   kids.forEach((k,i) => {
     style.textContent += `#tab-k${i}.active{color:${COLORS[i]};border-bottom-color:${COLORS[i]}}`;
   });
+  style.textContent += `#tab-comp.active{color:#6b5b45;border-bottom-color:#6b5b45}`;
   document.head.appendChild(style);
 
   // Main HTML
@@ -684,6 +735,41 @@ function initApp() {
     </div>`;
   });
 
+  // Comparativa section
+  html += `<div id="s-comp" class="section">
+    <div style="margin-bottom:1.5rem">
+      <div class="dtitle">Comparativa <strong style="color:#6b5b45">entre hermanos</strong></div>
+      <p style="font-size:.85rem;color:var(--text2);margin-top:.4rem">
+        Las curvas muestran el <strong>percentil equivalente por edad y sexo</strong> (escala OMS), 
+        para poder comparar niños y niñas en igualdad de condiciones.
+        Un valor de 50 equivale al P50 de su sexo.
+      </p>
+    </div>
+
+    <div class="cc">
+      <p class="clbl">Percentil de talla por edad (ajustado por sexo)</p>
+      <canvas id="chart-comp-pct" height="220"></canvas>
+      <div class="oleg" id="leg-comp-pct"></div>
+    </div>
+
+    <div class="cc">
+      <p class="clbl">Talla absoluta por edad (cm) — curvas P50 OMS de referencia</p>
+      <canvas id="chart-comp-abs" height="220"></canvas>
+      <div class="oleg" id="leg-comp-abs"></div>
+    </div>
+
+    <div class="cc">
+      <p class="clbl">IMC por edad</p>
+      <canvas id="chart-comp-imc" height="200"></canvas>
+      <div class="oleg" id="leg-comp-imc"></div>
+    </div>
+
+    <div class="tc">
+      <div class="th"><h3>Resumen comparativo a edades clave</h3></div>
+      <div id="comp-table"></div>
+    </div>
+  </div>`;
+
   el('main').innerHTML = html;
   document.getElementById('app').style.display = 'flex';
   renderAll();
@@ -704,7 +790,7 @@ async function saveMeasure() {
   const imc = peso && tallaN ? +(peso / Math.pow(tallaN/100, 2)).toFixed(1) : 0;
   const row = {
     fecha, talla: tallaN,
-    edad: parseFloat(el('f-edad').value) || parseFloat(calcAgeDecimal(D.config.kids[ACT_KID].dob).toFixed(1)),
+    edad: parseFloat(el('f-edad').value) || parseFloat(ageAtDate(D.config.kids[ACT_KID].dob, fecha).toFixed(1)),
     peso, imc,
     tipo: el('f-tipo').value || 'rutina',
     pc:    parseFloat(el('f-pc').value) || 0,
@@ -849,6 +935,119 @@ async function saveSettings() {
 }
 
 // ══════════════════════════════════════════
+// IMPORT BULK MEASURES
+// ══════════════════════════════════════════
+function openImport() {
+  // Populate kid selector
+  let opts = D.config.kids.map((k,i) => `<option value="${i}">${k.name} (${calcAge(k.dob)} años · nac. ${fmtDate(k.dob)})</option>`).join('');
+  el('imp-kid').innerHTML = opts;
+  el('imp-data').value = '';
+  el('ov-import').classList.add('open');
+}
+
+function parseImportLine(line) {
+  // Try to find a date pattern (dd-mm-yyyy or dd/mm/yyyy)
+  const dateMatch = line.match(/(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/);
+  if (!dateMatch) return null;
+  const dd = dateMatch[1].padStart(2,'0');
+  const mm = dateMatch[2].padStart(2,'0');
+  const yyyy = dateMatch[3];
+  const fecha = `${dd}-${mm}-${yyyy}`;
+  if (!isValidDate(fecha)) return null;
+
+  // Remove date from line, leaving the numbers
+  const rest = line.replace(dateMatch[0], '').replace(/kg|cm|g\b/gi,'');
+  // Extract all numbers (decimal with . or ,)
+  const numbers = (rest.match(/[\d]+[,\.]?[\d]*/g) || []).map(n => parseFloat(n.replace(',','.')));
+
+  if (numbers.length === 0) return null;
+
+  // Heuristic: if 2 numbers, first=peso(<50), second=talla(>30)
+  // If 1 number > 40, it's talla; otherwise peso
+  let peso = 0, talla = 0;
+  if (numbers.length >= 2) {
+    // Try to identify by magnitude
+    const [a, b] = numbers;
+    if (a < 40 && b > 30) { peso = a; talla = b; }
+    else if (b < 40 && a > 30) { peso = b; talla = a; }
+    else { peso = a; talla = b; }
+  } else if (numbers.length === 1) {
+    if (numbers[0] > 30) talla = numbers[0]; else peso = numbers[0];
+  }
+
+  if (!talla) return null;  // must have height
+
+  const imc = peso && talla ? +(peso / Math.pow(talla/100, 2)).toFixed(1) : 0;
+
+  return { fecha, talla, peso, imc, edad: 0, tipo: 'rutina', obs: '' };
+}
+
+async function doImport() {
+  const kidIdx = parseInt(el('imp-kid').value);
+  const text = el('imp-data').value.trim();
+  if (!text) { toast('Pega los datos antes de importar'); return; }
+
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const parsed = [];
+  const skipped = [];
+
+  lines.forEach((line, idx) => {
+    const r = parseImportLine(line);
+    if (r) parsed.push(r);
+    else skipped.push(idx + 1);
+  });
+
+  if (!parsed.length) { toast('No se han podido leer datos válidos'); return; }
+
+  const kid = D.config.kids[kidIdx];
+  parsed.forEach(r => {
+    r.edad = parseFloat(ageAtDate(kid.dob, r.fecha).toFixed(2));
+  });
+
+  const key = String(kidIdx);
+  const existing = D.measures[key] || [];
+  const existingDates = new Set(existing.map(r => r.fecha));
+
+  const toAdd    = parsed.filter(r => !existingDates.has(r.fecha));
+  const toUpdate = parsed.filter(r =>  existingDates.has(r.fecha));
+
+  let msg = `Medidas encontradas: ${parsed.length}`;
+  if (toAdd.length)    msg += `\n✓ Nuevas a añadir: ${toAdd.length}`;
+  if (toUpdate.length) msg += `\n↻ Ya existentes (se sobreescribirán): ${toUpdate.length}`;
+  if (skipped.length)  msg += `\n✕ Líneas no reconocidas: ${skipped.length}`;
+  msg += '\n\n¿Continuar?';
+
+  if (!confirm(msg)) return;
+
+  el('btn-import').textContent = 'Importando...';
+  if (!D.measures[key]) D.measures[key] = [];
+
+  const backup = [...D.measures[key]];
+
+  // Replace existing by fecha, add new ones
+  const merged = [...D.measures[key]];
+  toUpdate.forEach(r => {
+    const idx2 = merged.findIndex(e => e.fecha === r.fecha);
+    if (idx2 >= 0) merged[idx2] = r;
+  });
+  toAdd.forEach(r => merged.push(r));
+  merged.sort((a,b) => parseDate(a.fecha) - parseDate(b.fecha));
+
+  D.measures[key] = merged;
+
+  try {
+    await binPut(D);
+    closeModal('ov-import');
+    toast(`✓ ${toAdd.length} añadidas, ${toUpdate.length} actualizadas`);
+    renderAll();
+  } catch(e) {
+    D.measures[key] = backup;
+    toast('Error: '+e.message);
+  }
+  el('btn-import').textContent = 'Importar';
+}
+
+// ══════════════════════════════════════════
 // RENDER
 // ══════════════════════════════════════════
 function renderAll() {
@@ -859,20 +1058,43 @@ function renderAll() {
   renderAlerts();
   renderUpcoming();
   kids.forEach((_,i) => renderDetail(i));
+  renderComparativa();
 }
 
 function pct(t, edad, sex) {
   const oms = OMS[sex] || OMS.M;
-  const a = Math.min(17, Math.max(3, Math.round(edad)));
-  const r = oms[a];
-  if (!r) return { lbl:'—', n:50 };
-  if (t < r.p3)  return { lbl:'<P3', n:1 };
-  if (t < r.p10) return { lbl:'P3–P10', n:6 };
-  if (t < r.p25) return { lbl:'P10–P25', n:17 };
-  if (t < r.p50) return { lbl:'P25–P50', n:37 };
-  if (t < r.p75) return { lbl:'P50–P75', n:62 };
-  if (t < r.p90) return { lbl:'P75–P90', n:82 };
-  if (t < r.p97) return { lbl:'P90–P97', n:93 };
+  edad = Math.max(0, Math.min(19, edad));
+
+  const a0 = Math.floor(edad);
+  const a1 = Math.min(19, a0 + 1);
+  const frac = edad - a0;  // 0.0–1.0
+
+  // Interpolate OMS values between the two surrounding integer ages
+  function interp(key) {
+    const v0 = oms[a0]?.[key];
+    const v1 = oms[a1]?.[key];
+    if (v0 == null && v1 == null) return null;
+    if (v0 == null) return v1;
+    if (v1 == null) return v0;
+    return v0 + (v1 - v0) * frac;
+  }
+
+  const p3  = interp('p3');
+  const p10 = interp('p10');
+  const p25 = interp('p25');
+  const p50 = interp('p50');
+  const p75 = interp('p75');
+  const p90 = interp('p90');
+  const p97 = interp('p97');
+
+  if (p3  == null) return { lbl:'—', n:50 };
+  if (t < p3)  return { lbl:'<P3',     n:1  };
+  if (t < p10) return { lbl:'P3–P10',  n:6  };
+  if (t < p25) return { lbl:'P10–P25', n:17 };
+  if (t < p50) return { lbl:'P25–P50', n:37 };
+  if (t < p75) return { lbl:'P50–P75', n:62 };
+  if (t < p90) return { lbl:'P75–P90', n:82 };
+  if (t < p97) return { lbl:'P90–P97', n:93 };
   return { lbl:'>P97', n:99 };
 }
 
@@ -893,8 +1115,24 @@ function kidCardHtml(i) {
 
   const last = rows[rows.length-1];
   const prev = rows.length > 1 ? rows[rows.length-2] : null;
-  const vel  = prev ? +(last.talla - prev.talla).toFixed(1) : null;
-  const p    = pct(last.talla, last.edad || ageNow, kid.sex);
+
+  // Calculate velocity normalized to cm/year between last two measures
+  let velAnnual = null;     // cm/año
+  let velLabel = null;       // displayed value (cm/año)
+  let monthsBetween = null;
+  if (prev) {
+    const ld = parseDate(last.fecha);
+    const pd = parseDate(prev.fecha);
+    if (ld && pd) {
+      monthsBetween = (ld - pd) / (30.44 * 86400000);
+      if (monthsBetween > 0) {
+        velAnnual = +((last.talla - prev.talla) * (12 / monthsBetween)).toFixed(1);
+        velLabel = velAnnual;
+      }
+    }
+  }
+
+  const p    = pct(last.talla, measureAge(kid, last), kid.sex);
   const diff = diana ? (diana - last.talla).toFixed(0) : null;
 
   const rs = [];
@@ -903,10 +1141,17 @@ function kidCardHtml(i) {
   else if (p.n > 90) rs.push({i:'⬆️', t:'<strong>Por encima de P90.</strong> Sin acción necesaria.'});
   else               rs.push({i:'✅', t:`<strong>Rango normal</strong> (${p.lbl}) según tablas OMS.`});
 
-  if (vel !== null) {
-    if (vel < 4)      rs.push({i:'📉', t:`<strong>Velocidad baja:</strong> ${vel>=0?'+':''}${vel} cm. Derivar endocrinología.`});
-    else if (vel < 5) rs.push({i:'↘️', t:`<strong>Velocidad límite:</strong> ${vel>=0?'+':''}${vel} cm. Vigilar.`});
-    else              rs.push({i:'📈', t:`<strong>Velocidad OK:</strong> ${vel>=0?'+':''}${vel} cm.`});
+  if (velAnnual !== null) {
+    // Thresholds: < 4 cm/year baja en niño escolar, 4-5 límite, >5 OK
+    // Use age-aware threshold: babies need >> velocity, school-age >= 5 cm/year
+    const ageAtLast = measureAge(kid, last);
+    const minVel = ageAtLast < 2 ? 10 : ageAtLast < 4 ? 7 : 5;
+    if (velAnnual < minVel - 1)
+      rs.push({i:'📉', t:`<strong>Velocidad baja:</strong> ${velAnnual} cm/año (mínimo ${minVel}). Derivar endocrinología.`});
+    else if (velAnnual < minVel)
+      rs.push({i:'↘️', t:`<strong>Velocidad límite:</strong> ${velAnnual} cm/año (esperado ≥${minVel}). Vigilar.`});
+    else
+      rs.push({i:'📈', t:`<strong>Velocidad OK:</strong> ${velAnnual} cm/año.`});
   } else {
     rs.push({i:'ℹ️', t:'Añade más medidas para calcular la velocidad de crecimiento.'});
   }
@@ -921,7 +1166,7 @@ function kidCardHtml(i) {
       <div class="met"><div class="mv" style="color:${col}">${last.talla}</div><div class="ml">cm</div></div>
       <div class="met"><div class="mv" style="color:${col}">${last.peso||'—'}</div><div class="ml">kg</div></div>
       <div class="met"><div class="mv" style="color:${col}">${p.lbl}</div><div class="ml">percentil</div></div>
-      ${vel!==null?`<div class="met"><div class="mv" style="color:${col}">${vel>=0?'+':''}${vel}</div><div class="ml">cm Δ</div></div>`:''}
+      ${velAnnual!==null?`<div class="met"><div class="mv" style="color:${col}">${velAnnual>=0?'+':''}${velAnnual}</div><div class="ml">cm/año</div></div>`:''}
     </div>
     <div class="sp">${rs.map(r=>`<div class="sr"><span class="si">${r.i}</span><span class="st">${r.t}</span></div>`).join('')}</div>
   </div>`;
@@ -943,7 +1188,7 @@ function renderAlerts() {
     const ld    = parseDate(last.fecha);
     const ds    = ld ? Math.floor((today - ld) / 86400000) : 0;
     const ageNow = calcAgeDecimal(kid.dob);
-    const p     = pct(last.talla, last.edad || ageNow, kid.sex);
+    const p     = pct(last.talla, measureAge(kid, last), kid.sex);
 
     // Time since last measure
     if (ds > 180)
@@ -961,24 +1206,26 @@ function renderAlerts() {
         p:'Percentil bajo. Requiere seguimiento activo.',
         a:'En próxima visita pedir: IGF-1, IGFBP-3, TSH, T4L y Rx edad ósea.'});
 
-    // Velocity
+    // Velocity (normalized to cm/year)
     if (rows.length >= 2) {
       const prev = rows[rows.length-2];
       const pd = parseDate(prev.fecha);
-      const mo = (ld && pd) ? (ld - pd) / (30 * 86400000) : 0;
-      if (mo >= 5) {
-        const v6 = (last.talla - prev.talla) * (6 / mo);
-        if (v6 < 4)
+      const mo = (ld && pd) ? (ld - pd) / (30.44 * 86400000) : 0;
+      if (mo >= 3) {
+        const vy = (last.talla - prev.talla) * (12 / mo);
+        const ageAtLast = measureAge(kid, last);
+        const minVel = ageAtLast < 2 ? 10 : ageAtLast < 4 ? 7 : ageAtLast < 11 ? 5 : 6;
+        if (vy < minVel - 1)
           al.push({t:'r', ico:'📉', h:`${nm} — velocidad de crecimiento baja`,
-            p:`Estimada: ${v6.toFixed(1)} cm/6 meses (mínimo: 4 cm).`,
+            p:`Estimada: ${vy.toFixed(1)} cm/año (mínimo esperado: ${minVel} cm/año a su edad).`,
             a:'Derivar a endocrinología pediátrica. Solicitar pruebas de estimulación de GH en hospital de día.'});
-        else if (v6 < 5)
+        else if (vy < minVel)
           al.push({t:'o', ico:'↓', h:`${nm} — velocidad en límite`,
-            p:`${v6.toFixed(1)} cm/6 meses. Vigilar.`,
+            p:`${vy.toFixed(1)} cm/año (esperado ≥${minVel}). Vigilar.`,
             a:'Medir de nuevo en 3 meses. Si persiste, consultar al pediatra.'});
         else
           al.push({t:'g', ico:'✓', h:`${nm} — velocidad de crecimiento normal`,
-            p:`${v6.toFixed(1)} cm/6 meses. Dentro de rango.`, a:null});
+            p:`${vy.toFixed(1)} cm/año. Dentro de rango.`, a:null});
       }
     }
 
@@ -997,7 +1244,7 @@ function renderAlerts() {
 
     // Blood pressure
     if (last.tas && last.tad) {
-      const age = last.edad || ageNow;
+      const age = measureAge(kid, last);
       // Rough age-adjusted thresholds (P95 approximate)
       const tasHi = age < 10 ? 115 : age < 13 ? 125 : 135;
       const tadHi = age < 10 ? 75 : age < 13 ? 80 : 85;
@@ -1010,7 +1257,7 @@ function renderAlerts() {
     // IMC alerts
     if (last.imc) {
       // Rough IMC thresholds (OMS aproximado)
-      const age = last.edad || ageNow;
+      const age = measureAge(kid, last);
       if (last.imc < 14)
         al.push({t:'o', ico:'⚖', h:`${nm} — IMC bajo`,
           p:`IMC: ${last.imc}. Posible bajo peso.`,
@@ -1090,6 +1337,330 @@ function renderUpcoming() {
   }).join('');
 }
 
+// ══════════════════════════════════════════
+// COMPARATIVA
+// ══════════════════════════════════════════
+
+// Convert talla to a continuous 0–100 percentile score using interpolation
+// Uses the same pct() logic but returns a numeric score instead of a label
+function tallaToPctScore(talla, edad, sex) {
+  const oms = OMS[sex] || OMS.M;
+  edad = Math.max(0, Math.min(19, edad));
+  const a0 = Math.floor(edad), a1 = Math.min(19, a0+1), frac = edad - a0;
+
+  function interp(k) {
+    const v0=oms[a0]?.[k], v1=oms[a1]?.[k];
+    if(v0==null&&v1==null) return null;
+    if(v0==null) return v1; if(v1==null) return v0;
+    return v0+(v1-v0)*frac;
+  }
+
+  const bands = [
+    { pct:3,  val:interp('p3')  },
+    { pct:10, val:interp('p10') },
+    { pct:25, val:interp('p25') },
+    { pct:50, val:interp('p50') },
+    { pct:75, val:interp('p75') },
+    { pct:90, val:interp('p90') },
+    { pct:97, val:interp('p97') },
+  ].filter(b => b.val != null);
+
+  if(!bands.length) return null;
+
+  // Below P3
+  if(talla <= bands[0].val) {
+    return Math.max(0, 3 * talla / bands[0].val);
+  }
+  // Above P97
+  if(talla >= bands[bands.length-1].val) {
+    return Math.min(100, 97 + 3*(talla - bands[bands.length-1].val)/bands[bands.length-1].val);
+  }
+  // Interpolate between bands
+  for(let i=0; i<bands.length-1; i++) {
+    const lo = bands[i], hi = bands[i+1];
+    if(talla >= lo.val && talla < hi.val) {
+      const t = (talla - lo.val) / (hi.val - lo.val);
+      return +(lo.pct + t*(hi.pct - lo.pct)).toFixed(1);
+    }
+  }
+  return 50;
+}
+
+function renderComparativa() {
+  if(!el('chart-comp-pct')) return;
+  const kids = D.config.kids;
+
+  ['comp-pct','comp-abs','comp-imc'].forEach(id => {
+    if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}
+  });
+
+  // Build per-kid datasets
+  const pctDS=[], absDS=[], imcDS=[];
+
+  kids.forEach((kid,i) => {
+    const rows = D.measures[String(i)]||[];
+    const col = COLORS[i];
+    const seen = new Set();
+
+    const pts = rows
+      .filter(r=>{ if(seen.has(r.fecha)) return false; seen.add(r.fecha); return true; })
+      .map(r => {
+        const age = +(measureAge(kid,r)||0).toFixed(3);
+        return { age, talla:r.talla, peso:r.peso, imc:r.imc||0, fecha:fmtDate(r.fecha) };
+      })
+      .filter(p => p.talla>0 && p.age>=0)
+      .sort((a,b)=>a.age-b.age);
+
+    if(!pts.length) return;
+
+    const dash = kid.sex==='F' ? [5,3] : [];
+
+    // Percentile score — computed with the child's own sex table
+    pctDS.push({
+      label: `${kid.name} (${kid.sex==='M'?'♂':'♀'})`,
+      data: pts.map(p => {
+        const score = tallaToPctScore(p.talla, p.age, kid.sex);
+        return { x:p.age, y:score, fecha:p.fecha };
+      }).filter(p => p.y !== null),
+      borderColor:col, backgroundColor:col,
+      borderWidth:2.5, pointRadius:4, pointHoverRadius:7,
+      fill:false, tension:.2, showLine:true, borderDash:dash,
+    });
+
+    // Absolute talla
+    absDS.push({
+      label: `${kid.name} (${kid.sex==='M'?'♂':'♀'})`,
+      data: pts.map(p=>({ x:p.age, y:p.talla, fecha:p.fecha })),
+      borderColor:col, backgroundColor:col,
+      borderWidth:2.5, pointRadius:4, pointHoverRadius:7,
+      fill:false, tension:.2, showLine:true, borderDash:dash,
+    });
+
+    // IMC
+    const imcPts = pts.filter(p=>p.imc>5);
+    if(imcPts.length) {
+      imcDS.push({
+        label: kid.name,
+        data: imcPts.map(p=>({ x:p.age, y:p.imc, fecha:p.fecha })),
+        borderColor:col, backgroundColor:col,
+        borderWidth:2, pointRadius:4, pointHoverRadius:7,
+        fill:false, tension:.2, showLine:true, borderDash:dash,
+      });
+    }
+  });
+
+  // Max age across all measures
+  const allAges = kids.flatMap((_,i)=>(D.measures[String(i)]||[]).map(r=>measureAge(kids[i],r))).filter(a=>a>0);
+  const maxAge = allAges.length ? Math.min(19, Math.ceil(Math.max(...allAges))+1) : 10;
+
+  const tooltip = {
+    callbacks: {
+      label: ctx => {
+        const pt = ctx.raw;
+        const date = pt.fecha ? ` · ${pt.fecha}` : '';
+        return `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed?ctx.parsed.y.toFixed(1):ctx.parsed.y}${date}`;
+      }
+    }
+  };
+
+  const xScale = (max) => ({
+    type:'linear', min:0, max,
+    grid:{color:'#f0ece5'},
+    ticks:{font:{family:'DM Mono',size:10}, stepSize:max>8?2:1, callback:v=>v+'a'},
+    title:{display:true, text:'edad (años)', font:{size:10}, color:'#a09890'}
+  });
+
+  // ── CHART 1: PERCENTILE ──
+  // Reference horizontal lines at P10, P25, P50, P75, P90
+  const refLines = [
+    {y:10,c:'#fecaca',lbl:'P10'},{y:25,c:'#fed7aa',lbl:'P25'},
+    {y:50,c:'#b8a888',lbl:'P50'},{y:75,c:'#d8cfc0',lbl:'P75'},
+    {y:90,c:'#e8dfd0',lbl:'P90'},
+  ];
+  const refDS = refLines.map(r=>({
+    label:r.lbl,
+    data:[{x:0,y:r.y},{x:maxAge,y:r.y}],
+    borderColor:r.c, borderWidth:1.5, pointRadius:0,
+    fill:false, tension:0, showLine:true, borderDash:[4,4],
+  }));
+
+  CHARTS['comp-pct'] = new Chart(el('chart-comp-pct'),{
+    type:'line',
+    data:{datasets:[...refDS,...pctDS]},
+    options:{
+      responsive:true, maintainAspectRatio:true, parsing:false,
+      plugins:{legend:{display:false}, tooltip},
+      scales:{
+        x:xScale(maxAge),
+        y:{
+          min:0, max:100,
+          grid:{color:'#f0ece5'},
+          ticks:{font:{family:'DM Mono',size:10}, stepSize:10, callback:v=>'P'+v},
+          title:{display:true, text:'Percentil OMS (ajustado por sexo)', font:{size:10}, color:'#a09890'}
+        }
+      }
+    }
+  });
+
+  // ── CHART 2: ABSOLUTE TALLA ──
+  // P50 curves per sex (only show the relevant ones)
+  const hasMale   = kids.some(k=>k.sex==='M');
+  const hasFemale = kids.some(k=>k.sex==='F');
+  const ages0to = Array.from({length:maxAge+1},(_,i)=>i);
+  const refAbsDS = [];
+
+  if(hasMale) {
+    refAbsDS.push({
+      label:'P50 ♂', data:ages0to.map(a=>({x:a,y:OMS.M[a]?.p50??null})),
+      borderColor:'rgba(30,77,53,0.3)', borderWidth:1.5, pointRadius:0,
+      fill:false, tension:.3, showLine:true, borderDash:[8,4],
+    });
+    refAbsDS.push({
+      label:'P10 ♂', data:ages0to.map(a=>({x:a,y:OMS.M[a]?.p10??null})),
+      borderColor:'rgba(30,77,53,0.12)', borderWidth:1, pointRadius:0,
+      fill:false, tension:.3, showLine:true, borderDash:[4,4],
+    });
+    refAbsDS.push({
+      label:'P90 ♂', data:ages0to.map(a=>({x:a,y:OMS.M[a]?.p90??null})),
+      borderColor:'rgba(30,77,53,0.12)', borderWidth:1, pointRadius:0,
+      fill:false, tension:.3, showLine:true, borderDash:[4,4],
+    });
+  }
+  if(hasFemale) {
+    refAbsDS.push({
+      label:'P50 ♀', data:ages0to.map(a=>({x:a,y:OMS.F[a]?.p50??null})),
+      borderColor:'rgba(107,45,94,0.3)', borderWidth:1.5, pointRadius:0,
+      fill:false, tension:.3, showLine:true, borderDash:[8,4],
+    });
+    refAbsDS.push({
+      label:'P10 ♀', data:ages0to.map(a=>({x:a,y:OMS.F[a]?.p10??null})),
+      borderColor:'rgba(107,45,94,0.12)', borderWidth:1, pointRadius:0,
+      fill:false, tension:.3, showLine:true, borderDash:[4,4],
+    });
+    refAbsDS.push({
+      label:'P90 ♀', data:ages0to.map(a=>({x:a,y:OMS.F[a]?.p90??null})),
+      borderColor:'rgba(107,45,94,0.12)', borderWidth:1, pointRadius:0,
+      fill:false, tension:.3, showLine:true, borderDash:[4,4],
+    });
+  }
+
+  CHARTS['comp-abs'] = new Chart(el('chart-comp-abs'),{
+    type:'line',
+    data:{datasets:[...refAbsDS,...absDS]},
+    options:{
+      responsive:true, maintainAspectRatio:true, parsing:false,
+      plugins:{legend:{display:false}, tooltip},
+      scales:{
+        x:xScale(maxAge),
+        y:{
+          grid:{color:'#f0ece5'},
+          ticks:{font:{family:'DM Mono',size:10}},
+          title:{display:true, text:'cm', font:{size:10}, color:'#a09890'}
+        }
+      }
+    }
+  });
+
+  // ── CHART 3: IMC ──
+  // Reference bands for IMC
+  const imcRefDS = [
+    {y:14,c:'#fecaca',lbl:'Bajo peso'},{y:18,c:'#fef08a',lbl:'Normal (inf)'},
+    {y:22,c:'#bbf7d0',lbl:'Normal (sup)'},{y:25,c:'#fed7aa',lbl:'Sobrepeso'},
+  ].map(r=>({
+    label:r.lbl,
+    data:[{x:0,y:r.y},{x:maxAge,y:r.y}],
+    borderColor:r.c, borderWidth:1, pointRadius:0,
+    fill:false, showLine:true, borderDash:[3,3],
+  }));
+
+  CHARTS['comp-imc'] = new Chart(el('chart-comp-imc'),{
+    type:'line',
+    data:{datasets:[...imcRefDS,...imcDS]},
+    options:{
+      responsive:true, maintainAspectRatio:true, parsing:false,
+      plugins:{legend:{display:false}, tooltip},
+      scales:{
+        x:xScale(maxAge),
+        y:{
+          min:10, max:28,
+          grid:{color:'#f0ece5'},
+          ticks:{font:{family:'DM Mono',size:10}},
+          title:{display:true, text:'IMC kg/m²', font:{size:10}, color:'#a09890'}
+        }
+      }
+    }
+  });
+
+  // ── LEGENDS ──
+  const sexIcon = k => k.sex==='M'?'♂':'♀';
+  const kidLegend = (filterFn) => kids
+    .filter((_,i)=>filterFn(i))
+    .map((k,i)=>`<span><i style="background:${COLORS[i]};${k.sex==='F'?'opacity:.7':''}"></i>${k.name} ${sexIcon(k)}</span>`)
+    .join('');
+
+  el('leg-comp-pct').innerHTML =
+    kidLegend(i=>(D.measures[String(i)]||[]).length>0) +
+    (hasMale&&hasFemale ? `<span style="font-size:.68rem;color:var(--text3);margin-left:.5rem">sólido=♂ · rayado=♀</span>` : '') +
+    refLines.map(r=>`<span><i style="background:${r.c}"></i>${r.lbl}</span>`).join('');
+
+  el('leg-comp-abs').innerHTML =
+    (hasMale   ? `<span><i style="background:rgba(30,77,53,.3)"></i>P10–P90 ♂</span>` : '') +
+    (hasFemale ? `<span><i style="background:rgba(107,45,94,.3)"></i>P10–P90 ♀</span>` : '') +
+    kidLegend(i=>(D.measures[String(i)]||[]).length>0);
+
+  el('leg-comp-imc').innerHTML = kidLegend(i=>(D.measures[String(i)]||[]).filter(r=>r.imc>0).length>0);
+
+  renderCompTable();
+}
+
+function renderCompTable() {
+  const kids = D.config.kids;
+  const keyAges = [0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16];
+
+  function nearestRow(kidIdx, targetAge) {
+    const rows = D.measures[String(kidIdx)]||[];
+    const kid = kids[kidIdx];
+    let best = null, bestDist = 0.35; // ~4 months tolerance
+    rows.forEach(r => {
+      const age = measureAge(kid, r);
+      const dist = Math.abs(age - targetAge);
+      if(dist < bestDist){ bestDist=dist; best={row:r, age:+age.toFixed(1)}; }
+    });
+    return best;
+  }
+
+  let thead = `<tr><th style="font-size:.75rem">Edad</th>`;
+  kids.forEach(k => {
+    thead += `<th style="font-size:.75rem">${k.name} ${k.sex==='M'?'♂':'♀'}<br><span style="font-weight:400;font-size:.68rem;opacity:.7">talla · percentil</span></th>`;
+  });
+  thead += `</tr>`;
+
+  let tbody = '';
+  keyAges.forEach(ta => {
+    const found = kids.map((_,i) => nearestRow(i, ta));
+    if(!found.some(f=>f)) return;
+
+    let row = `<tr><td class="tm" style="font-weight:600;white-space:nowrap">${ta===0?'Nacim.':ta+'a'}</td>`;
+    found.forEach((f,i) => {
+      if(!f){row+='<td style="color:var(--text3)">—</td>';return;}
+      const p = pct(f.row.talla, f.age, kids[i].sex);
+      const ps = p.n<3?'color:var(--red)':p.n<10?'color:var(--red)':p.n<25?'color:var(--ora)':p.n>=50&&p.n<=75?'color:var(--grn)':'color:var(--grn)';
+      row += `<td class="tm">${f.row.talla} cm<br>
+        <span style="font-size:.74rem;font-weight:600;${ps}">${p.lbl}</span>
+        <span style="font-size:.67rem;color:var(--text3)"> · ${f.age}a</span>
+      </td>`;
+    });
+    row += `</tr>`;
+    tbody += row;
+  });
+
+  const compTbl = el('comp-table');
+  if(compTbl) compTbl.innerHTML = `<div style="overflow-x:auto"><table>
+    <thead>${thead}</thead><tbody>${tbody}</tbody>
+  </table></div>`;
+}
+
+
 function renderDetail(i) {
   const kid = D.config.kids[i];
   const rows = D.measures[String(i)] || [];
@@ -1115,14 +1686,14 @@ function renderDetail(i) {
       const pv = oi > 0 ? rows[oi-1] : null;
       const v  = pv ? (r.talla - pv.talla).toFixed(1) : '—';
       const vs = v!=='—' ? (parseFloat(v)<4?'color:var(--red)':parseFloat(v)<5?'color:var(--ora)':'color:var(--grn)') : '';
-      const p  = pct(r.talla, r.edad || ageNow, kid.sex);
+      const p  = pct(r.talla, measureAge(kid, r), kid.sex);
       const ps = p.n<3?'background:var(--redl);color:var(--red)':p.n<10?'background:var(--oral);color:var(--ora)':p.n<25?'background:var(--yell);color:var(--yel)':'background:var(--grnl);color:var(--grn)';
       const tipoLbl = {rutina:'Rutina',casa:'Casa',endocrino:'Endocrino',analitica:'Analítica',urgencias:'Urgencias',otro:'Otro'}[r.tipo||'rutina'];
       const ta = (r.tas && r.tad) ? `${r.tas}/${r.tad}` : '—';
       return `<tr>
         <td class="tm">${fmtDate(r.fecha)}</td>
         <td style="font-size:.76rem;color:var(--text2)">${tipoLbl}</td>
-        <td class="tm">${r.edad ? parseFloat(r.edad).toFixed(1) : '—'}</td>
+        <td class="tm">${(measureAge(kid, r) || 0).toFixed(1)}</td>
         <td class="tm"><strong>${r.talla}</strong></td>
         <td class="tm">${r.peso || '—'}</td>
         <td class="tm">${r.imc || '—'}</td>
@@ -1176,11 +1747,29 @@ function renderChart(i, rows, oms, ageNow, col, diana) {
   const cv = el('chart-'+i);
   if (CHARTS[i]) { CHARTS[i].destroy(); delete CHARTS[i]; }
 
-  const minAge = Math.max(3, Math.floor(ageNow) - 1);
-  const maxAge = Math.max(...Object.keys(oms).map(Number));
-  const ages = [];
-  for (let a = minAge; a <= maxAge; a++) ages.push(a);
-  const lbls = ages.map(a => a+'a');
+  const kid = D.config.kids[i];
+
+  // Compute real age per measurement, deduplicate by fecha, sort by date
+  const seen = new Set();
+  const measuresXY = rows
+    .filter(r => { if (seen.has(r.fecha)) return false; seen.add(r.fecha); return true; })
+    .map(r => ({
+      x: +(measureAge(kid, r) || 0).toFixed(3),
+      y: r.talla,
+      label: fmtDate(r.fecha)
+    }))
+    .filter(p => p.y > 0 && p.x >= 0)
+    .sort((a,b) => a.x - b.x);
+
+  // Chart range
+  let minMeasureAge = ageNow, maxMeasureAge = ageNow;
+  if (measuresXY.length) {
+    minMeasureAge = measuresXY[0].x;
+    maxMeasureAge = measuresXY[measuresXY.length - 1].x;
+  }
+  const omsMaxAge = Math.max(...Object.keys(oms).map(Number));
+  const minAge = Math.max(0, Math.floor(Math.min(minMeasureAge, ageNow)) - 1);
+  const maxAge = Math.min(omsMaxAge, Math.ceil(Math.max(maxMeasureAge, ageNow)) + 2);
 
   const curves = [
     {k:'p97',c:'#e8dfd0'},{k:'p75',c:'#d8cfc0'},
@@ -1188,66 +1777,99 @@ function renderChart(i, rows, oms, ageNow, col, diana) {
     {k:'p10',c:'#e8dfd0'},{k:'p3', c:'#f5c2bc'}
   ];
 
-  const ds = curves.map(cv => ({
-    label: cv.k.toUpperCase(),
-    data: ages.map(a => oms[a]?.[cv.k] ?? null),
-    borderColor: cv.c, borderWidth: cv.k==='p50'?1.5:1,
-    borderDash: cv.k==='p50'?[4,3]:cv.k==='p3'?[3,3]:[],
-    pointRadius: 0, fill: false, tension: .3
-  }));
+  // Build OMS curves as {x,y} datasets so they share the numeric axis
+  const ds = curves.map(cv2 => {
+    const points = [];
+    for (let a = minAge; a <= maxAge; a++) {
+      if (oms[a] && oms[a][cv2.k] != null) points.push({ x: a, y: oms[a][cv2.k] });
+    }
+    return {
+      label: cv2.k.toUpperCase(),
+      data: points,
+      borderColor: cv2.c,
+      borderWidth: cv2.k==='p50'?1.5:1,
+      borderDash: cv2.k==='p50'?[4,3]:cv2.k==='p3'?[3,3]:[],
+      pointRadius: 0,
+      fill: false,
+      tension: .3,
+      showLine: true,
+    };
+  });
 
-  let ulbs = lbls;
-  const kid = D.config.kids[i];
-
-  if (rows.length) {
-    const ra = rows.map(r => parseFloat(r.edad || ageNow).toFixed(1)+'a');
-    ulbs = [...new Set([...lbls, ...ra])].sort((a,b) => parseFloat(a)-parseFloat(b));
-
-    ds.forEach(d => {
-      const k = d.label.toLowerCase(), m = {};
-      ages.forEach(a => { if (oms[a]) m[a+'a'] = oms[a][k]; });
-      d.data = ulbs.map(l => m[l] ?? null);
-    });
-
-    const m = {};
-    rows.forEach(r => { m[parseFloat(r.edad||ageNow).toFixed(1)+'a'] = r.talla; });
+  // Child measures dataset
+  if (measuresXY.length) {
     ds.push({
       label: kid.name,
-      data: ulbs.map(l => m[l] ?? null),
-      borderColor: col, backgroundColor: col,
-      borderWidth: 2.5, pointRadius: 5, pointHoverRadius: 7,
-      fill: false, tension: .3, spanGaps: true
+      data: measuresXY,
+      borderColor: col,
+      backgroundColor: col,
+      borderWidth: 2.5,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      fill: false,
+      tension: .25,
+      showLine: true,
     });
   }
 
+  // Diana line — horizontal across the full age range
   if (diana) {
     ds.push({
       label: 'Diana',
-      data: ulbs.map(() => diana),
-      borderColor: col, borderWidth: 1.5,
-      borderDash: [6, 4], pointRadius: 0, fill: false, tension: 0
+      data: [{ x: minAge, y: diana }, { x: maxAge, y: diana }],
+      borderColor: col,
+      borderWidth: 1.5,
+      borderDash: [6, 4],
+      pointRadius: 0,
+      fill: false,
+      tension: 0,
+      showLine: true,
     });
   }
 
   CHARTS[i] = new Chart(cv, {
     type: 'line',
-    data: { labels: ulbs, datasets: ds },
+    data: { datasets: ds },
     options: {
-      responsive: true, maintainAspectRatio: true, spanGaps: true,
+      responsive: true,
+      maintainAspectRatio: true,
+      parsing: false,  // datasets contain {x,y} objects
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ctx.dataset.label+': '+ctx.raw+' cm' } }
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const pt = ctx.raw;
+              const dateStr = pt.label ? ` (${pt.label})` : '';
+              return `${ctx.dataset.label}: ${ctx.parsed.y} cm${dateStr}`;
+            }
+          }
+        }
       },
       scales: {
-        x: { grid:{color:'#f0ece5'}, ticks:{font:{family:'DM Mono',size:10}} },
-        y: { grid:{color:'#f0ece5'}, ticks:{font:{family:'DM Mono',size:10}},
-             title:{display:true,text:'cm',font:{size:10},color:'#a09890'} }
+        x: {
+          type: 'linear',
+          min: minAge,
+          max: maxAge,
+          grid: { color: '#f0ece5' },
+          ticks: {
+            font: { family: 'DM Mono', size: 10 },
+            stepSize: 1,
+            callback: v => v + 'a'
+          },
+          title: { display: true, text: 'edad (años)', font: { size: 10 }, color: '#a09890' }
+        },
+        y: {
+          grid: { color: '#f0ece5' },
+          ticks: { font: { family: 'DM Mono', size: 10 } },
+          title: { display: true, text: 'cm', font: { size: 10 }, color: '#a09890' }
+        }
       }
     }
   });
 
   el('leg-'+i).innerHTML =
-    curves.map(cv => `<span><i style="background:${cv.c}"></i>${cv.k.toUpperCase()}</span>`).join('') +
+    curves.map(cv2 => `<span><i style="background:${cv2.c}"></i>${cv2.k.toUpperCase()}</span>`).join('') +
     `<span><i style="background:${col}"></i>${kid.name}</span>` +
     (diana ? `<span><i style="background:${col};opacity:.5"></i>Diana</span>` : '');
 }
@@ -1271,7 +1893,7 @@ function openModal(kidIdx) {
   el('btn-sub').style.background = COLORS[kidIdx];
   el('btn-sub').textContent = 'Guardar';
   el('f-fecha').value = todayStr();
-  el('f-edad').value = calcAgeDecimal(kid.dob).toFixed(1);
+  el('f-edad').value = ageAtDate(kid.dob, todayStr()).toFixed(1);
   el('f-tipo').value = 'rutina';
   ['f-talla','f-peso','f-imc','f-pc','f-ebone','f-tas','f-tad','f-obs'].forEach(id => el(id).value = '');
   el('f-tanner').value = '';
@@ -1309,6 +1931,17 @@ function recalcIMC() {
   if (t && p) el('f-imc').value = (p / Math.pow(t/100, 2)).toFixed(1);
   else el('f-imc').value = '';
 }
+
+// Auto-update age from measurement date
+function recalcAgeFromDate() {
+  if (ACT_KID === undefined || !D || !D.config) return;
+  const kid = D.config.kids[ACT_KID];
+  if (!kid) return;
+  const f = el('f-fecha').value.trim();
+  if (isValidDate(f)) {
+    el('f-edad').value = ageAtDate(kid.dob, f).toFixed(1);
+  }
+}
 function closeModal(id) { el(id).classList.remove('open'); }
 function el(id) { return document.getElementById(id); }
 function show(id) { document.getElementById(id).style.display = 'flex'; }
@@ -1319,6 +1952,7 @@ function toast(msg) {
 }
 
 el('f-fecha').addEventListener('input', formatDateInput);
+el('f-fecha').addEventListener('input', recalcAgeFromDate);
 el('f-talla').addEventListener('input', recalcIMC);
 el('f-peso').addEventListener('input', recalcIMC);
 document.querySelectorAll('.overlay').forEach(o =>
